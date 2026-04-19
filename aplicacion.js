@@ -886,8 +886,6 @@ function updateTableFilters() {
 
     // Categorías con iconos
     const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
-    // Categorías con iconos
-    const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
     const currentCat = filterCategory.value;
     filterCategory.innerHTML = '<option value="all">Todas las categorías</option>';
     
