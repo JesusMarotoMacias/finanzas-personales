@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas Personales</title>
+    <meta name="description" content="Gestor personal de gastos e ingresos con análisis visual, gráficos interactivos y seguimiento de categorías.">
+    <!-- Fuentes modernas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Hoja de estilos -->
+    <link rel="stylesheet" href="estilos.css">
+    <!-- Librerías Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- Cabecera -->
+        <header class="glass-header">
+            <div class="logo">
+                <h1>💰 Finanzas Personales</h1>
+            </div>
+            <div class="header-actions">
+                <button id="btn-add-manual" class="btn-secondary" title="Añadir movimiento manualmente">
+                    ➕ Añadir Movimiento
+                </button>
+                <button id="btn-export" class="btn-secondary" title="Exportar datos" style="display:none">
+                    📥 Exportar
+                </button>
+                <button id="btn-clear-data" class="btn-danger" title="Borrar todos los datos" style="display:none">
+                    🗑️ Limpiar Datos
+                </button>
+                <button id="theme-toggle" class="btn-theme" title="Cambiar modo claro/oscuro">
+                    <span id="theme-icon">☀️</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Contenido principal -->
+        <main>
+
+            <!-- Panel de subida de archivos -->
+            <section class="upload-section glass-card fade-in">
+                <h2>📂 Importar Extracto Bancario</h2>
+                <p>Suba su archivo de Excel (.xlsx) o CSV. El archivo debe tener columnas como "Fecha", "Concepto" e "Importe" para que el programa pueda leerlo automáticamente.</p>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="excel-file" accept=".xls,.xlsx,.csv" />
+                    <label for="excel-file" class="btn-primary">Seleccionar Archivo Excel</label>
+                </div>
+                <div id="upload-status" class="status-msg"></div>
+            </section>
+
+            <!-- Resumen numérico -->
+            <section class="summary-section fade-in delay-1">
+                <div class="summary-card income">
+                    <div class="summary-icon">📈</div>
+                    <h3>Ingresos Totales</h3>
+                    <p id="total-income" class="amount">0,00 €</p>
+                </div>
+                <div class="summary-card expenses">
+                    <div class="summary-icon">📉</div>
+                    <h3>Gastos Totales</h3>
+                    <p id="total-expenses" class="amount">0,00 €</p>
+                </div>
+                <div class="summary-card balance">
+                    <div class="summary-icon">⚖️</div>
+                    <h3>Balance General</h3>
+                    <p id="total-balance" class="amount">0,00 €</p>
+                </div>
+            </section>
+
+            <!-- Gráficos -->
+            <section class="charts-section fade-in delay-2">
+                <div class="chart-container glass-card">
+                    <h3>🔴 Gastos por Categoría</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="expenses-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container glass-card">
+                    <h3>🟢 Ingresos por Categoría</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="income-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container glass-card full-width">
+                    <h3>📊 Evolución Mensual del Balance</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="evolution-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabla de Movimientos -->
+            <section id="transactions-section" class="glass-card fade-in" style="display:none">
+                <div class="table-header-row">
+                    <h2>📋 Mis Movimientos</h2>
+                    <div class="table-filters">
+                        <select id="filter-type" class="filter-select">
+                            <option value="all">Todos los tipos</option>
+                            <option value="income">Solo Ingresos</option>
+                            <option value="expense">Solo Gastos</option>
+                            <option value="transfer">Solo Traspasos</option>
+                        </select>
+                        <select id="filter-category" class="filter-select">
+                            <option value="all">Todas las categorías</option>
+                        </select>
+                        <select id="filter-month" class="filter-select">
+                            <option value="all">Todos los meses</option>
+                        </select>
+                        <input type="text" id="filter-search" class="filter-input" placeholder="🔍 Buscar concepto...">
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table id="transactions-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="date" class="sortable">Fecha <span class="sort-icon">↕</span></th>
+                                <th>Concepto / Categoría</th>
+                                <th data-sort="amount" class="sortable">Importe <span class="sort-icon">↕</span></th>
+                                <th>Tipo</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-tbody"></tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span id="table-count">0 movimientos</span>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ============================================
+         MODAL: Asistente de Categorías
+    ============================================= -->
+    <div id="category-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <h2>🏷️ Nuevos Conceptos Detectados</h2>
+            <p>Se han encontrado movimientos que la aplicación aún no reconoce. Asígneles una categoría para organizar sus gráficos (sus elecciones se guardarán para el futuro):</p>
+            <div id="unknown-concepts-container" class="concepts-list"></div>
+            <div class="modal-actions">
+                <button id="btn-save-categories" class="btn-primary" style="width:100%; margin-top:1rem;">Guardar y Procesar Gráficos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: Añadir Movimiento Manual
+    ============================================= -->
+    <div id="manual-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-title-row">
+                <h2 id="manual-modal-title">➕ Añadir Movimiento</h2>
+                <button id="btn-close-manual" class="btn-close">✕</button>
+            </div>
+            <form id="manual-form" class="manual-form">
+                <div class="form-group">
+                    <label for="manual-date">Fecha</label>
+                    <input type="date" id="manual-date" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-concept">Concepto / Descripción</label>
+                    <input type="text" id="manual-concept" class="form-input" placeholder="Ej: Supermercado Mercadona" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-category">Categoría</label>
+                    <select id="manual-category" class="category-select form-input"></select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de movimiento</label>
+                    <div class="type-toggle">
+                        <button type="button" id="type-expense" class="type-btn active expense-btn" data-type="expense">📉 Gasto</button>
+                        <button type="button" id="type-income" class="type-btn income-btn" data-type="income">📈 Ingreso</button>
+                        <button type="button" id="type-transfer" class="type-btn transfer-btn" data-type="transfer">🔄 Traspaso</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="manual-amount">Importe (€)</label>
+                    <input type="number" id="manual-amount" class="form-input" placeholder="0,00" min="0.01" step="0.01" required>
+                </div>
+                <button type="submit" id="btn-submit-manual" class="btn-primary" style="width:100%; margin-top:0.5rem;">✅ Añadir Movimiento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: Exportar Datos
+    ============================================= -->
+    <div id="export-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card">
+            <div class="modal-title-row">
+                <h2>📥 Exportar Datos</h2>
+                <button id="btn-close-export" class="btn-close">✕</button>
+            </div>
+            <p>Elija el formato de exportación para sus movimientos financieros:</p>
+            <div class="export-options">
+                <button id="btn-export-csv" class="export-option-btn">
+                    <span class="export-icon">📄</span>
+                    <div>
+                        <span class="export-label">Exportar a CSV</span>
+                        <span class="export-desc">Compatible con Excel y Google Sheets</span>
+                    </div>
+                </button>
+                <button id="btn-export-print" class="export-option-btn">
+                    <span class="export-icon">🖨️</span>
+                    <div>
+                        <span class="export-label">Imprimir / Guardar PDF</span>
+                        <span class="export-desc">Genera un informe para imprimir o guardar como PDF</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: Confirmación de Borrado
+    ============================================= -->
+    <div id="confirm-clear-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card" style="max-width:400px; text-align:center;">
+            <div style="font-size: 3.5rem; margin-bottom: 1rem; line-height:1;">⚠️</div>
+            <h2>¿Borrar todos los datos?</h2>
+            <p>Esta acción eliminará todos los movimientos cargados y no se puede deshacer.</p>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button id="btn-confirm-clear" class="btn-danger" style="flex:1; justify-content:center;">Sí, borrar todo</button>
+                <button id="btn-cancel-clear" class="btn-secondary" style="flex:1; justify-content:center;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje Toast (guardado / avisos) -->
+    <div id="save-toast" class="toast hidden">💾 Datos guardados automáticamente</div>
+
+    <!-- Script principal de la aplicación -->
+    <script src="aplicacion.js"></script>
+</body>
+</html>
