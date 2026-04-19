@@ -154,6 +154,29 @@ const defaultCategories = [
     "Otros"
 ];
 
+const categoryIcons = {
+    "Ingresos Fijos": "💰",
+    "Ingresos Extras": "🎁",
+    "Vivienda / Alquiler": "🏠",
+    "Alimentación / Supermercado": "🛒",
+    "Transporte / Gasolina": "🚗",
+    "Ocio y Restaurantes": "🍽️",
+    "Salud / Farmacia": "⚕️",
+    "Ropa / Moda": "👕",
+    "Servicios (Luz, Agua, Internet)": "🔌",
+    "Seguros": "🛡️",
+    "Compras Online": "📦",
+    "Comisiones Bancarias": "🏦",
+    "Ahorro / Inversión": "📈",
+    "Otros": "⚙️",
+    "Suscripciones": "📺",
+    "Traspaso": "⇄"
+};
+
+function getCategoryIcon(cat) {
+    return categoryIcons[cat] || "❓";
+}
+
 let availableCategories = JSON.parse(localStorage.getItem('availableCategories')) || [...defaultCategories];
 
 function saveCategories() {
@@ -853,43 +876,49 @@ function updateDashboard() {
 function updateTableFilters() {
     const filterCategory = document.getElementById('filter-category');
     const filterMonth = document.getElementById('filter-month');
+    const filterYear = document.getElementById('filter-year');
 
+    // Categorías con iconos
     const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
     const currentCat = filterCategory.value;
     filterCategory.innerHTML = '<option value="all">Todas las categorías</option>';
     categories.forEach(cat => {
         const opt = document.createElement('option');
-        opt.value = cat; opt.textContent = cat;
+        opt.value = cat; opt.textContent = `${getCategoryIcon(cat)} ${cat}`;
         filterCategory.appendChild(opt);
     });
     if (currentCat && [...filterCategory.options].some(o => o.value === currentCat)) {
         filterCategory.value = currentCat;
     }
 
-    const months = [...new Set(appData.transactions.map(t => {
-        const d = new Date(t.date);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }))].sort().reverse();
-
+    // Meses (Enero - Diciembre)
     const currentMonth = filterMonth.value;
     filterMonth.innerHTML = '<option value="all">Todos los meses</option>';
-    months.forEach(m => {
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    for (let i = 1; i <= 12; i++) {
         const opt = document.createElement('option');
-        opt.value = m;
-        const [year, month] = m.split('-');
-        const d = new Date(parseInt(year), parseInt(month) - 1, 1);
-        opt.textContent = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        opt.value = i; opt.textContent = monthNames[i-1];
         filterMonth.appendChild(opt);
-    });
-    if (currentMonth && [...filterMonth.options].some(o => o.value === currentMonth)) {
-        filterMonth.value = currentMonth;
     }
+    if (currentMonth) filterMonth.value = currentMonth;
+
+    // Años (dinámicos)
+    const currentYear = filterYear.value;
+    const years = [...new Set(appData.transactions.map(t => new Date(t.date).getFullYear()))].sort((a,b) => b-a);
+    filterYear.innerHTML = '<option value="all">Todos los años</option>';
+    years.forEach(y => {
+        if (!isNaN(y)) {
+            const opt = document.createElement('option');
+            opt.value = y; opt.textContent = y;
+            filterYear.appendChild(opt);
+        }
+    });
+    if (currentYear) filterYear.value = currentYear;
 }
 
 function getFilteredTransactions() {
-    const filterType = document.getElementById('filter-type').value;
-    const filterCategory = document.getElementById('filter-category').value;
-    const filterMonth = document.getElementById('filter-month').value;
+    const filterMonthVal = document.getElementById('filter-month').value;
+    const filterYearVal = document.getElementById('filter-year').value;
     const filterSearch = document.getElementById('filter-search').value.toLowerCase().trim();
 
     let result = [...appData.transactions];
@@ -900,12 +929,11 @@ function getFilteredTransactions() {
     if (filterCategory !== 'all') {
         result = result.filter(t => t.category === filterCategory);
     }
-    if (filterMonth !== 'all') {
-        result = result.filter(t => {
-            const d = new Date(t.date);
-            const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            return m === filterMonth;
-        });
+    if (filterMonthVal !== 'all') {
+        result = result.filter(t => (new Date(t.date).getMonth() + 1).toString() === filterMonthVal);
+    }
+    if (filterYearVal !== 'all') {
+        result = result.filter(t => new Date(t.date).getFullYear().toString() === filterYearVal);
     }
     if (filterSearch) {
         result = result.filter(t =>
@@ -971,14 +999,12 @@ function renderTable() {
                 badgeText = '🔄 Traspaso';
             }
 
-            const manualMark = t.manual ? ' <span style="font-size:0.65rem; opacity:0.5; font-weight:400;">✏️</span>' : '';
-
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="td-date">${dateStr}</td>
-                <td class="td-concept">
-                    <div>${(t.rawCategory || t.category)}${manualMark}</div>
-                    <span class="td-category-badge">${t.category}</span>
+                <td>${new Date(t.date).toLocaleDateString('es-ES')}</td>
+                <td>
+                    <div style="font-weight: 600;">${t.rawCategory || 'Sin concepto'}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${getCategoryIcon(t.category)} ${t.category}</div>
                 </td>
                 <td class="td-amount ${amountClass}">${amountSign} ${amountStr}</td>
                 <td><span class="badge-type ${badgeClass}">${badgeText}</span></td>
@@ -1072,16 +1098,15 @@ function renderPagination(total) {
 }
 
 // Listeners de filtros
-['filter-type', 'filter-category', 'filter-month'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => {
-        tableCurrentPage = 1;
-        renderTable();
-    });
-});
-document.getElementById('filter-search').addEventListener('input', () => {
-    tableCurrentPage = 1;
-    renderTable();
-});
+const filterMonth = document.getElementById('filter-month');
+const filterYear = document.getElementById('filter-year');
+const filterSearch = document.getElementById('filter-search');
+
+filterType.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
+filterCategory.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
+filterMonth.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
+filterYear.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
+filterSearch.addEventListener('input', () => { tableCurrentPage = 1; renderTable(); });
 
 // Listeners de ordenación por columna
 document.querySelectorAll('th.sortable').forEach(th => {
@@ -1362,12 +1387,12 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
         });
     }
 
-    // Gráfico de Ingresos (pastel)
+    // Gráfico de Ingresos (dona)
     const ctxInc = document.getElementById('income-chart').getContext('2d');
     if (incomeChart) incomeChart.destroy();
     if (hasIncome) {
         incomeChart = new Chart(ctxInc, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: Object.keys(incomeMap),
                 datasets: [{ data: Object.values(incomeMap), backgroundColor: chartPalette, borderWidth: 2, borderColor: 'transparent' }]
