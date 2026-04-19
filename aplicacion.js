@@ -1120,6 +1120,8 @@ function renderPagination(total) {
 }
 
 // Listeners de filtros
+const filterType = document.getElementById('filter-type');
+const filterCategory = document.getElementById('filter-category');
 const filterMonth = document.getElementById('filter-month');
 const filterYear = document.getElementById('filter-year');
 const filterSearch = document.getElementById('filter-search');
