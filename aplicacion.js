@@ -20,7 +20,6 @@ const btnClearData = document.getElementById('btn-clear-data');
 // ==========================================
 // Variables Globales de Estado
 let appData = { transactions: [], lastSaved: null };
-let availableCategories = [];
 let editingTransactionIndex = null; // Para saber qué movimiento estamos editando
 
 // Inteligencia: Mapeo de palabras clave a categorías
@@ -276,7 +275,7 @@ const loadData = () => {
 };
 
 const saveData = (showToastFlag = true) => {
-    appData.lastSave = new Date().getTime();
+    appData.lastSaved = new Date().getTime();
     localStorage.setItem('finanzasData', JSON.stringify(appData));
     if (showToastFlag) {
         showToastMessage('💾 Datos guardados automáticamente');
