@@ -917,17 +917,19 @@ function updateTableFilters() {
 }
 
 function getFilteredTransactions() {
+    const filterTypeVal = document.getElementById('filter-type').value;
+    const filterCategoryVal = document.getElementById('filter-category').value;
     const filterMonthVal = document.getElementById('filter-month').value;
     const filterYearVal = document.getElementById('filter-year').value;
     const filterSearch = document.getElementById('filter-search').value.toLowerCase().trim();
 
     let result = [...appData.transactions];
 
-    if (filterType !== 'all') {
-        result = result.filter(t => t.type === filterType);
+    if (filterTypeVal !== 'all') {
+        result = result.filter(t => t.type === filterTypeVal);
     }
-    if (filterCategory !== 'all') {
-        result = result.filter(t => t.category === filterCategory);
+    if (filterCategoryVal !== 'all') {
+        result = result.filter(t => t.category === filterCategoryVal);
     }
     if (filterMonthVal !== 'all') {
         result = result.filter(t => (new Date(t.date).getMonth() + 1).toString() === filterMonthVal);
