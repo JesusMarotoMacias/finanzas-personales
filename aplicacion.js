@@ -835,14 +835,20 @@ function updateDashboard() {
     const balanceByMonth = {};
 
     appData.transactions.forEach(t => {
-        if (t.type === 'transfer') return; // Los traspasos no cuentan para el balance total
+        if (t.type === 'transfer') return;
+
+        // Categorías que nunca deben aparecer en gastos por definición
+        const incomeFixedCats = ['Ingresos Fijos', 'Otros Ingresos', 'Nómina', 'Ventas'];
 
         if (t.type === 'income') {
             totalIncome += t.amount;
             incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
-        } else {
+        } else if (t.type === 'expense') {
             totalExpenses += Math.abs(t.amount);
-            expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
+            // Solo añadir al gráfico si no es una categoría de ingresos
+            if (!incomeFixedCats.includes(t.category)) {
+                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
+            }
         }
 
         try {
@@ -852,7 +858,7 @@ function updateDashboard() {
                 if (!balanceByMonth[mk]) balanceByMonth[mk] = { income: 0, expense: 0 };
                 if (t.type === 'income') {
                     balanceByMonth[mk].income += t.amount;
-                } else {
+                } else if (t.type === 'expense') {
                     balanceByMonth[mk].expense += Math.abs(t.amount);
                 }
             }
@@ -880,8 +886,17 @@ function updateTableFilters() {
 
     // Categorías con iconos
     const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
+    // Categorías con iconos
+    const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
     const currentCat = filterCategory.value;
     filterCategory.innerHTML = '<option value="all">Todas las categorías</option>';
+    
+    // Opción especial para ver los que el sistema no conoce bien
+    const optReview = document.createElement('option');
+    optReview.value = "__review__";
+    optReview.textContent = "⚠️ Pendientes de Revisión";
+    filterCategory.appendChild(optReview);
+
     categories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat; opt.textContent = `${getCategoryIcon(cat)} ${cat}`;
@@ -929,7 +944,12 @@ function getFilteredTransactions() {
         result = result.filter(t => t.type === filterTypeVal);
     }
     if (filterCategoryVal !== 'all') {
-        result = result.filter(t => t.category === filterCategoryVal);
+        if (filterCategoryVal === "__review__") {
+            // Filtrar movimientos que no están en el mapeo aprendido o marcados como manuales
+            result = result.filter(t => !categoryMappings[t.rawCategory] && !t.manual);
+        } else {
+            result = result.filter(t => t.category === filterCategoryVal);
+        }
     }
     if (filterMonthVal !== 'all') {
         result = result.filter(t => (new Date(t.date).getMonth() + 1).toString() === filterMonthVal);
@@ -1331,6 +1351,31 @@ function exportToCSV() {
     showToastMessage('📄 CSV exportado correctamente');
 }
 
+let currentExpensesChartType = 'doughnut';
+let currentIncomeChartType = 'doughnut';
+
+function initChartControls() {
+    document.querySelectorAll('.chart-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const chartId = btn.closest('.chart-controls').dataset.chartId;
+            const type = btn.dataset.type;
+            
+            if (chartId === 'expenses') {
+                currentExpensesChartType = type;
+            } else {
+                currentIncomeChartType = type;
+            }
+            
+            // Actualizar UI de botones
+            btn.parentElement.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            updateDashboard();
+        });
+    });
+}
+initChartControls();
+
 // ==========================================
 // GRÁFICOS
 // ==========================================
@@ -1355,19 +1400,23 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
     const hasExpenses = Object.keys(expensesMap).length > 0;
     const hasIncome = Object.keys(incomeMap).length > 0;
 
-    const commonDoughnutOptions = {
+    const getOptions = (type) => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: 'right',
+                position: type === 'bar' ? 'top' : 'right',
                 labels: { color: colors.text, boxWidth: 14, font: { size: 12 }, padding: 12 }
             },
             tooltip: {
                 callbacks: { label: (item) => ` ${formatCurrency(item.raw)}` }
             }
-        }
-    };
+        },
+        scales: type === 'bar' ? {
+            y: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+            x: { grid: { display: false }, ticks: { color: colors.text } }
+        } : {}
+    });
 
     const chartPalette = [
         '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -1375,31 +1424,31 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
         '#06b6d4', '#a855f7', '#f43f5e', '#22d3ee'
     ];
 
-    // Gráfico de Gastos (dona)
+    // Gráfico de Gastos
     const ctxExp = document.getElementById('expenses-chart').getContext('2d');
     if (expensesChart) expensesChart.destroy();
     if (hasExpenses) {
         expensesChart = new Chart(ctxExp, {
-            type: 'doughnut',
+            type: currentExpensesChartType,
             data: {
                 labels: Object.keys(expensesMap),
                 datasets: [{ data: Object.values(expensesMap), backgroundColor: chartPalette, borderWidth: 2, borderColor: 'transparent' }]
             },
-            options: commonDoughnutOptions
+            options: getOptions(currentExpensesChartType)
         });
     }
 
-    // Gráfico de Ingresos (dona)
+    // Gráfico de Ingresos
     const ctxInc = document.getElementById('income-chart').getContext('2d');
     if (incomeChart) incomeChart.destroy();
     if (hasIncome) {
         incomeChart = new Chart(ctxInc, {
-            type: 'doughnut',
+            type: currentIncomeChartType,
             data: {
                 labels: Object.keys(incomeMap),
                 datasets: [{ data: Object.values(incomeMap), backgroundColor: chartPalette, borderWidth: 2, borderColor: 'transparent' }]
             },
-            options: commonDoughnutOptions
+            options: getOptions(currentIncomeChartType)
         });
     }
 

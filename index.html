@@ -75,13 +75,26 @@
             <!-- Gráficos -->
             <section class="charts-section fade-in delay-2">
                 <div class="chart-container glass-card">
-                    <h3>🔴 Gastos por Categoría</h3>
+                    <div class="chart-header">
+                        <h3>🔴 Gastos por Categoría</h3>
+                        <div class="chart-controls" data-chart-id="expenses">
+                            <button class="chart-type-btn active" data-type="doughnut" title="Dona">🍩</button>
+                            <button class="chart-type-btn" data-type="bar" title="Barras">📊</button>
+                            <button class="chart-type-btn" data-type="polarArea" title="Radar">🕸️</button>
+                        </div>
+                    </div>
                     <div class="canvas-wrapper">
                         <canvas id="expenses-chart"></canvas>
                     </div>
                 </div>
                 <div class="chart-container glass-card">
-                    <h3>🟢 Ingresos por Categoría</h3>
+                    <div class="chart-header">
+                        <h3>🟢 Ingresos por Categoría</h3>
+                        <div class="chart-controls" data-chart-id="income">
+                            <button class="chart-type-btn active" data-type="doughnut" title="Dona">🍩</button>
+                            <button class="chart-type-btn" data-type="bar" title="Barras">📊</button>
+                        </div>
+                    </div>
                     <div class="canvas-wrapper">
                         <canvas id="income-chart"></canvas>
                     </div>

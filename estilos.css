@@ -298,6 +298,46 @@ input[type="file"] { display: none; }
     gap: 1.5rem;
 }
 .chart-container.full-width { grid-column: 1 / -1; }
+.chart-container {
+    display: flex;
+    flex-direction: column;
+}
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+.chart-header h3 { margin: 0; }
+.chart-controls {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--bg-secondary);
+    padding: 0.25rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--border-color);
+}
+.chart-type-btn {
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.6;
+}
+.chart-type-btn:hover {
+    opacity: 1;
+    background: var(--table-stripe);
+}
+.chart-type-btn.active {
+    opacity: 1;
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
 .canvas-wrapper {
     position: relative;
     height: 300px;
