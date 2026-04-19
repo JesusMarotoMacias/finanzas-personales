@@ -149,6 +149,7 @@ const defaultCategories = [
     "Servicios (Luz, Agua, Internet)",
     "Seguros",
     "Compras Online",
+    "Suscripciones",
     "Comisiones Bancarias",
     "Ahorro / Inversión",
     "Otros"
@@ -178,6 +179,14 @@ function getCategoryIcon(cat) {
 }
 
 let availableCategories = JSON.parse(localStorage.getItem('availableCategories')) || [...defaultCategories];
+
+// Sincronizar categorías por defecto nuevas
+defaultCategories.forEach(cat => {
+    if (!availableCategories.includes(cat)) {
+        availableCategories.push(cat);
+    }
+});
+saveCategories();
 
 function saveCategories() {
     localStorage.setItem('availableCategories', JSON.stringify(availableCategories));
@@ -834,8 +843,19 @@ function updateDashboard() {
     const incomeByCategory = {};
     const balanceByMonth = {};
 
+    const filterMonthVal = document.getElementById('filter-month').value;
+    const filterYearVal = document.getElementById('filter-year').value;
+
     appData.transactions.forEach(t => {
         if (t.type === 'transfer') return;
+
+        // Filtrar por mes/año para los gráficos y totales si hay filtros activos
+        const tDate = new Date(t.date);
+        const tMonth = (tDate.getMonth() + 1).toString();
+        const tYear = tDate.getFullYear().toString();
+
+        if (filterMonthVal !== 'all' && tMonth !== filterMonthVal) return;
+        if (filterYearVal !== 'all' && tYear !== filterYearVal) return;
 
         // Categorías que nunca deben aparecer en gastos por definición
         const incomeFixedCats = ['Ingresos Fijos', 'Otros Ingresos', 'Nómina', 'Ventas'];
@@ -845,24 +865,18 @@ function updateDashboard() {
             incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
         } else if (t.type === 'expense') {
             totalExpenses += Math.abs(t.amount);
-            // Solo añadir al gráfico si no es una categoría de ingresos
             if (!incomeFixedCats.includes(t.category)) {
                 expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
             }
         }
 
-        try {
-            const d = new Date(t.date);
-            if (!isNaN(d.getTime())) {
-                const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                if (!balanceByMonth[mk]) balanceByMonth[mk] = { income: 0, expense: 0 };
-                if (t.type === 'income') {
-                    balanceByMonth[mk].income += t.amount;
-                } else if (t.type === 'expense') {
-                    balanceByMonth[mk].expense += Math.abs(t.amount);
-                }
-            }
-        } catch (e) { }
+        const mk = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!balanceByMonth[mk]) balanceByMonth[mk] = { income: 0, expense: 0 };
+        if (t.type === 'income') {
+            balanceByMonth[mk].income += t.amount;
+        } else if (t.type === 'expense') {
+            balanceByMonth[mk].expense += Math.abs(t.amount);
+        }
     });
 
     const balance = totalIncome - totalExpenses;
@@ -1124,11 +1138,11 @@ const filterMonth = document.getElementById('filter-month');
 const filterYear = document.getElementById('filter-year');
 const filterSearch = document.getElementById('filter-search');
 
-filterType.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
-filterCategory.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
-filterMonth.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
-filterYear.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
-filterSearch.addEventListener('input', () => { tableCurrentPage = 1; renderTable(); });
+filterType.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
+filterCategory.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
+filterMonth.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
+filterYear.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
+filterSearch.addEventListener('input', () => { tableCurrentPage = 1; updateDashboard(); });
 
 // Listeners de ordenación por columna
 document.querySelectorAll('th.sortable').forEach(th => {
@@ -1405,16 +1419,17 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: type === 'bar' ? 'top' : 'right',
-                labels: { color: colors.text, boxWidth: 14, font: { size: 12 }, padding: 12 }
+                display: type !== 'bar', // En barras a veces es redundante si solo hay un set
+                position: 'right',
+                labels: { color: colors.text, boxWidth: 12, font: { size: 11 }, padding: 10 }
             },
             tooltip: {
-                callbacks: { label: (item) => ` ${formatCurrency(item.raw)}` }
+                callbacks: { label: (item) => ` ${item.label || item.dataset.label}: ${formatCurrency(item.raw)}` }
             }
         },
         scales: type === 'bar' ? {
-            y: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-            x: { grid: { display: false }, ticks: { color: colors.text } }
+            y: { grid: { color: colors.grid }, ticks: { color: colors.text, font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: colors.text, font: { size: 10 } } }
         } : {}
     });
 
@@ -1432,7 +1447,13 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
             type: currentExpensesChartType,
             data: {
                 labels: Object.keys(expensesMap),
-                datasets: [{ data: Object.values(expensesMap), backgroundColor: chartPalette, borderWidth: 2, borderColor: 'transparent' }]
+                datasets: [{ 
+                    label: 'Gasto Total',
+                    data: Object.values(expensesMap), 
+                    backgroundColor: chartPalette, 
+                    borderWidth: 2, 
+                    borderColor: 'transparent' 
+                }]
             },
             options: getOptions(currentExpensesChartType)
         });
@@ -1446,7 +1467,13 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
             type: currentIncomeChartType,
             data: {
                 labels: Object.keys(incomeMap),
-                datasets: [{ data: Object.values(incomeMap), backgroundColor: chartPalette, borderWidth: 2, borderColor: 'transparent' }]
+                datasets: [{ 
+                    label: 'Ingreso Total',
+                    data: Object.values(incomeMap), 
+                    backgroundColor: chartPalette, 
+                    borderWidth: 2, 
+                    borderColor: 'transparent' 
+                }]
             },
             options: getOptions(currentIncomeChartType)
         });
