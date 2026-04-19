@@ -1,0 +1,11 @@
+# Datos personales y extractos bancarios
+*.xlsx
+*.csv
+Jesus_Maroto_Control_Finanzas.html
+
+# Archivos de agente
+*.agent.md
+
+# Dependencias
+node_modules/
+package-lock.json
