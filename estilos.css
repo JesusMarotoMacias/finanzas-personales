@@ -624,6 +624,14 @@ tbody tr:last-child td { border-bottom: none; }
     word-break: break-word;
     font-size: 0.88rem;
 }
+.concept-name-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.concept-amount-subtitle {
+    color: var(--text-muted);
+}
 .select-wrapper {
     display: flex;
     flex-direction: column;
@@ -680,9 +688,70 @@ tbody tr:last-child td { border-bottom: none; }
     pointer-events: none;
 }
 
-/* ==========================================
-   ANIMACIONES
-   ========================================== */
+/* Fraccionamiento */
+.split-info-header {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+}
+.info-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.info-box strong {
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+#split-pending-amount.error {
+    color: var(--expense);
+}
+#split-pending-amount.correct {
+    color: var(--income);
+}
+
+.split-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 0.4rem;
+}
+.split-row-item {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    background: var(--table-stripe);
+    padding: 0.5rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--border-color);
+}
+.split-row-item .form-input {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.btn-row-split {
+    opacity: 0.3;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+.btn-row-split:hover {
+    opacity: 1;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--primary);
+}
+
+/* Animaciones */
 .fade-in {
     opacity: 0;
     animation: fadeInUp 0.7s forwards;

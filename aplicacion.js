@@ -52,10 +52,48 @@ const defaultKeywords = {
     "SPOTIFY": "Suscripciones",
     "NETFLIX": "Suscripciones",
     "HBO": "Suscripciones",
-    "DISNEY": "Suscripciones"
+    "DISNEY": "Suscripciones",
+    // Nuevas palabras solicitadas
+    "FOOD": "Ocio y Restaurantes",
+    "TAPERIA": "Ocio y Restaurantes",
+    "DESAYUNO": "Ocio y Restaurantes",
+    "HOSTELERIA": "Ocio y Restaurantes",
+    "ALDI": "Alimentación / Supermercado",
+    "SALUD": "Salud / Farmacia",
+    "CARNICERIA": "Alimentación / Supermercado",
+    "CERVECERIA": "Ocio y Restaurantes",
+    "CHIRINGUITO": "Ocio y Restaurantes",
+    "FARMACIA": "Salud / Farmacia",
+    "GASTRO": "Ocio y Restaurantes",
+    "HOTEL": "Ocio y Restaurantes",
+    "PARKING": "Transporte / Gasolina",
+    "BARRA": "Ocio y Restaurantes",
+    "LONJA": "Ocio y Restaurantes",
+    "MESON": "Ocio y Restaurantes",
+    "TABERNA": "Ocio y Restaurantes",
+    "TAXI": "Transporte / Gasolina",
+    "GOURMET": "Ocio y Restaurantes",
+    "MANGO": "Ropa / Moda",
+    "PRIVALIA": "Ropa / Moda",
+    "PURIFICACION GARCIA": "Ropa / Moda",
+    "TINTORETO": "Ropa / Moda",
+    "AEGON": "Seguros",
+    "ASISA": "Seguros",
+    "C.P.": "Vivienda / Alquiler",
+    "COMUNIDAD PROPIETARIOS": "Vivienda / Alquiler",
+    "AQUALIA": "Vivienda / Alquiler",
+    "GYM": "Ocio y Restaurantes"
 };
 
-const categoryKeywords = JSON.parse(localStorage.getItem('categoryKeywords')) || defaultKeywords;
+const categoryKeywords = JSON.parse(localStorage.getItem('categoryKeywords')) || {};
+
+// Sincronizar: Añadir nuevas palabras por defecto si no existen ya en el almacenamiento del usuario
+Object.keys(defaultKeywords).forEach(key => {
+    if (!categoryKeywords[key]) {
+        categoryKeywords[key] = defaultKeywords[key];
+    }
+});
+localStorage.setItem('categoryKeywords', JSON.stringify(categoryKeywords));
 
 function saveKeywords() {
     localStorage.setItem('categoryKeywords', JSON.stringify(categoryKeywords));
@@ -165,17 +203,31 @@ btnSaveCategories.addEventListener('click', () => {
     processPendingTransactions();
 });
 
-function showCategoryWizard(unknownConcepts) {
+function showCategoryWizard(unknownConceptsData) {
     unknownConceptsContainer.innerHTML = '';
 
-    unknownConcepts.forEach(concept => {
+    unknownConceptsData.forEach(item => {
+        const { concept, amount } = item;
         const row = document.createElement('div');
         row.className = 'category-row';
         row.dataset.concept = concept;
 
         const label = document.createElement('div');
-        label.className = 'concept-name';
-        label.textContent = concept;
+        label.className = 'concept-name-wrapper';
+        
+        const conceptTitle = document.createElement('div');
+        conceptTitle.className = 'concept-name';
+        conceptTitle.textContent = concept;
+        
+        const amountSubtitle = document.createElement('div');
+        amountSubtitle.className = 'concept-amount-subtitle';
+        amountSubtitle.textContent = `Importe: ${formatCurrency(amount)}`;
+        amountSubtitle.style.fontSize = '0.75rem';
+        amountSubtitle.style.opacity = '0.7';
+        amountSubtitle.style.marginTop = '0.1rem';
+        
+        label.appendChild(conceptTitle);
+        label.appendChild(amountSubtitle);
 
         const selectWrapper = document.createElement('div');
         selectWrapper.className = 'select-wrapper';
@@ -620,7 +672,7 @@ function processExcelData(data) {
     }
 
     const transactions = [];
-    const unknownConcepts = new Set();
+    const unknownConcepts = new Map(); // Concepto -> Importe de ejemplo
 
     data.forEach(row => {
         const keys = Object.keys(row);
@@ -706,7 +758,9 @@ function processExcelData(data) {
             });
 
             if (!mapped && !guessed) {
-                unknownConcepts.add(rawCategory);
+                if (!unknownConcepts.has(rawCategory)) {
+                    unknownConcepts.set(rawCategory, amount);
+                }
             }
         }
     });
@@ -722,7 +776,14 @@ function processExcelData(data) {
     if (unknownConcepts.size > 0) {
         uploadStatus.textContent = `🔍 Se encontraron ${unknownConcepts.size} concepto(s) nuevo(s). Asígneles una categoría para continuar.`;
         uploadStatus.className = 'status-msg';
-        showCategoryWizard(Array.from(unknownConcepts).sort());
+        
+        // Convertimos el Map en un array de objetos para el wizard
+        const wizardData = Array.from(unknownConcepts.entries()).map(([concept, amount]) => ({
+            concept,
+            amount
+        })).sort((a, b) => a.concept.localeCompare(b.concept));
+
+        showCategoryWizard(wizardData);
     } else {
         processPendingTransactions();
     }
@@ -923,6 +984,7 @@ function renderTable() {
                 <td><span class="badge-type ${badgeClass}">${badgeText}</span></td>
                 <td>
                     <div style="display:flex; gap:0.5rem; justify-content:center;">
+                        <button class="btn-row-action btn-row-split" data-index="${globalIdx}" title="Fraccionar movimiento">✂️</button>
                         <button class="btn-row-action btn-row-edit" data-index="${globalIdx}" title="Editar movimiento">✏️</button>
                         <button class="btn-row-action btn-row-delete" data-index="${globalIdx}" title="Eliminar movimiento">🗑️</button>
                     </div>
@@ -961,6 +1023,16 @@ function renderTable() {
                     showToastMessage('🗑️ Movimiento eliminado');
                 }
             }
+        });
+    });
+
+    // Listener de fraccionamiento
+    tbody.querySelectorAll('.btn-row-split').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const filteredIdx = parseInt(e.currentTarget.dataset.index);
+            const transactionToSplit = filteredTransactions[filteredIdx];
+            const realIdx = appData.transactions.indexOf(transactionToSplit);
+            openSplitModal(realIdx);
         });
     });
 }
@@ -1031,6 +1103,131 @@ document.querySelectorAll('th.sortable').forEach(th => {
         renderTable();
     });
 });
+
+// ==========================================
+// LÓGICA DE FRACCIONAMIENTO
+// ==========================================
+const splitModal = document.getElementById('split-modal');
+const btnCloseSplit = document.getElementById('btn-close-split');
+const btnCancelSplit = document.getElementById('btn-cancel-split');
+const btnSaveSplit = document.getElementById('btn-save-split');
+const btnAddSplitRow = document.getElementById('btn-add-split-row');
+const splitRowsContainer = document.getElementById('split-rows-container');
+const splitOriginalAmountText = document.getElementById('split-original-amount');
+const splitPendingAmountText = document.getElementById('split-pending-amount');
+
+let splittingTransactionIndex = null;
+let originalSplitAmount = 0;
+
+function openSplitModal(realIdx) {
+    splittingTransactionIndex = realIdx;
+    const t = appData.transactions[realIdx];
+    originalSplitAmount = Math.abs(t.amount);
+    
+    splitOriginalAmountText.textContent = formatCurrency(originalSplitAmount);
+    splitRowsContainer.innerHTML = '';
+    
+    // Añadimos dos filas iniciales para empezar a fraccionar
+    addSplitRow(t.category, originalSplitAmount);
+    addSplitRow('Otros', 0);
+    
+    updateSplitCalculation();
+    splitModal.classList.remove('hidden');
+}
+
+function addSplitRow(category = 'Otros', amount = 0) {
+    const row = document.createElement('div');
+    row.className = 'split-row-item';
+    
+    const select = document.createElement('select');
+    select.className = 'form-input category-select';
+    availableCategories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat; opt.textContent = cat;
+        if (cat === category) opt.selected = true;
+        select.appendChild(opt);
+    });
+    
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'form-input amount-input';
+    input.step = '0.01';
+    input.min = '0';
+    input.value = amount.toFixed(2);
+    input.placeholder = 'Importe';
+    
+    const btnDel = document.createElement('button');
+    btnDel.className = 'btn-close';
+    btnDel.textContent = '✕';
+    btnDel.addEventListener('click', () => {
+        row.remove();
+        updateSplitCalculation();
+    });
+    
+    input.addEventListener('input', updateSplitCalculation);
+    select.addEventListener('change', updateSplitCalculation);
+    
+    row.appendChild(select);
+    row.appendChild(input);
+    row.appendChild(btnDel);
+    splitRowsContainer.appendChild(row);
+}
+
+function updateSplitCalculation() {
+    let currentTotal = 0;
+    const inputs = splitRowsContainer.querySelectorAll('.amount-input');
+    inputs.forEach(input => {
+        currentTotal += parseFloat(input.value) || 0;
+    });
+    
+    const pending = originalSplitAmount - currentTotal;
+    splitPendingAmountText.textContent = formatCurrency(pending);
+    
+    if (Math.abs(pending) < 0.01) {
+        splitPendingAmountText.className = 'correct';
+        splitPendingAmountText.textContent = '✓ Total Ajustado';
+        btnSaveSplit.disabled = false;
+        btnSaveSplit.style.opacity = '1';
+    } else {
+        splitPendingAmountText.className = 'error';
+        btnSaveSplit.disabled = true;
+        btnSaveSplit.style.opacity = '0.5';
+    }
+}
+
+btnAddSplitRow.addEventListener('click', () => addSplitRow());
+
+btnSaveSplit.addEventListener('click', () => {
+    const tOriginal = appData.transactions[splittingTransactionIndex];
+    const rows = splitRowsContainer.querySelectorAll('.split-row-item');
+    const newTransactions = [];
+    
+    rows.forEach(row => {
+        const cat = row.querySelector('.category-select').value;
+        const amt = parseFloat(row.querySelector('.amount-input').value) || 0;
+        
+        if (amt > 0) {
+            newTransactions.push({
+                ...tOriginal,
+                category: cat,
+                rawCategory: tOriginal.rawCategory + ` (${cat})`,
+                amount: tOriginal.amount > 0 ? amt : -amt,
+                manual: true
+            });
+        }
+    });
+    
+    // Reemplazamos el original por los nuevos trozos
+    appData.transactions.splice(splittingTransactionIndex, 1, ...newTransactions);
+    
+    saveData(false);
+    updateDashboard();
+    splitModal.classList.add('hidden');
+    showToastMessage('✂️ Movimiento fraccionado correctamente');
+});
+
+btnCloseSplit.addEventListener('click', () => splitModal.classList.add('hidden'));
+btnCancelSplit.addEventListener('click', () => splitModal.classList.add('hidden'));
 
 // ==========================================
 // MODAL: EXPORTAR DATOS

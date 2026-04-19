@@ -234,6 +234,43 @@
         </div>
     </div>
 
+    <!-- ============================================
+         MODAL: Fraccionar Movimiento
+    ============================================= -->
+    <div id="split-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card" style="max-width: 500px;">
+            <div class="modal-title-row">
+                <h2>✂️ Fraccionar Movimiento</h2>
+                <button id="btn-close-split" class="btn-close">✕</button>
+            </div>
+            <p>Divida el importe total en diferentes categorías. El total fraccionado debe coincidir con el original.</p>
+            
+            <div class="split-info-header">
+                <div class="info-box">
+                    <span>Original:</span>
+                    <strong id="split-original-amount">0,00 €</strong>
+                </div>
+                <div class="info-box">
+                    <span>Pendiente:</span>
+                    <strong id="split-pending-amount">0,00 €</strong>
+                </div>
+            </div>
+
+            <div id="split-rows-container" class="split-rows">
+                <!-- Se rellenará por JS -->
+            </div>
+
+            <button id="btn-add-split-row" class="btn-secondary" style="width:100%; margin-top:1rem;">
+                ➕ Añadir otra parte
+            </button>
+
+            <div class="modal-actions" style="margin-top: 1.5rem; display:flex; gap:1rem;">
+                <button id="btn-save-split" class="btn-primary" style="flex:2;">Confirmar Fraccionamiento</button>
+                <button id="btn-cancel-split" class="btn-secondary" style="flex:1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mensaje Toast (guardado / avisos) -->
     <div id="save-toast" class="toast hidden">💾 Datos guardados automáticamente</div>
 
