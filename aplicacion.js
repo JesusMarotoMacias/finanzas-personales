@@ -409,13 +409,56 @@ function showToastMessage(msg) {
 }
 
 // ==========================================
-// MODAL: LIMPIAR TODOS LOS DATOS
+// MODAL: LIMPIAR DATOS
 // ==========================================
 const confirmClearModal = document.getElementById('confirm-clear-modal');
 const btnConfirmClear = document.getElementById('btn-confirm-clear');
 const btnCancelClear = document.getElementById('btn-cancel-clear');
+const deleteDateRange = document.getElementById('delete-date-range');
+const deleteFrom = document.getElementById('delete-from');
+const deleteTo = document.getElementById('delete-to');
+const deletePreview = document.getElementById('delete-preview');
+const deleteWarning = document.getElementById('delete-warning');
+const deleteModeBtns = document.querySelectorAll('.delete-mode-btn');
+let currentDeleteMode = 'all';
+
+function updateDeletePreview() {
+    if (currentDeleteMode !== 'range') return;
+    const from = deleteFrom.value ? new Date(deleteFrom.value) : null;
+    const to = deleteTo.value ? new Date(deleteTo.value + 'T23:59:59') : null;
+    const count = appData.transactions.filter(t => {
+        const d = new Date(t.date);
+        return (!from || d >= from) && (!to || d <= to);
+    }).length;
+    deletePreview.textContent = count > 0
+        ? `Se eliminarán ${count} movimiento(s) en ese rango.`
+        : 'Ningún movimiento en ese rango.';
+}
+
+deleteModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        deleteModeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDeleteMode = btn.dataset.mode;
+        const isRange = currentDeleteMode === 'range';
+        deleteDateRange.classList.toggle('hidden', !isRange);
+        deleteWarning.textContent = isRange
+            ? 'Solo se eliminarán los movimientos del rango indicado.'
+            : 'Esta acción eliminará todos los movimientos y no se puede deshacer.';
+        if (isRange) updateDeletePreview();
+    });
+});
+
+deleteFrom.addEventListener('change', updateDeletePreview);
+deleteTo.addEventListener('change', updateDeletePreview);
 
 btnClearData.addEventListener('click', () => {
+    // Resetear modal al abrirlo
+    deleteModeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === 'all'));
+    currentDeleteMode = 'all';
+    deleteDateRange.classList.add('hidden');
+    deletePreview.textContent = '';
+    deleteWarning.textContent = 'Esta acción eliminará todos los movimientos y no se puede deshacer.';
     confirmClearModal.classList.remove('hidden');
 });
 btnCancelClear.addEventListener('click', () => {
@@ -426,6 +469,22 @@ confirmClearModal.addEventListener('click', (e) => {
 });
 
 btnConfirmClear.addEventListener('click', () => {
+    if (currentDeleteMode === 'range') {
+        const from = deleteFrom.value ? new Date(deleteFrom.value) : null;
+        const to = deleteTo.value ? new Date(deleteTo.value + 'T23:59:59') : null;
+        const before = appData.transactions.length;
+        appData.transactions = appData.transactions.filter(t => {
+            const d = new Date(t.date);
+            return (from && d < from) || (to && d > to);
+        });
+        const removed = before - appData.transactions.length;
+        saveData(false);
+        updateDashboard();
+        confirmClearModal.classList.add('hidden');
+        showToastMessage(`🗑️ ${removed} movimiento(s) eliminados`);
+        return;
+    }
+
     appData.transactions = [];
     localStorage.removeItem('finanzasData');
 

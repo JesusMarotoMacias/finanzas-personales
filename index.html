@@ -242,12 +242,29 @@
          MODAL: Confirmación de Borrado
     ============================================= -->
     <div id="confirm-clear-modal" class="modal-overlay hidden">
-        <div class="modal-content glass-card" style="max-width:400px; text-align:center;">
-            <div style="font-size: 3.5rem; margin-bottom: 1rem; line-height:1;">⚠️</div>
-            <h2>¿Borrar todos los datos?</h2>
-            <p>Esta acción eliminará todos los movimientos cargados y no se puede deshacer.</p>
+        <div class="modal-content glass-card" style="max-width:430px;">
+            <div style="font-size:3rem; line-height:1; text-align:center; margin-bottom:0.75rem;">🗑️</div>
+            <h2 style="text-align:center; margin-bottom:1rem;">Borrar movimientos</h2>
+            <div class="delete-mode-toggle">
+                <button type="button" class="delete-mode-btn active" data-mode="all">Borrar todo</button>
+                <button type="button" class="delete-mode-btn" data-mode="range">Por rango de fechas</button>
+            </div>
+            <div id="delete-date-range" class="hidden" style="margin-top:1rem;">
+                <div style="display:flex; gap:1rem;">
+                    <div class="form-group" style="flex:1; margin:0;">
+                        <label>Desde</label>
+                        <input type="date" id="delete-from" class="form-input">
+                    </div>
+                    <div class="form-group" style="flex:1; margin:0;">
+                        <label>Hasta</label>
+                        <input type="date" id="delete-to" class="form-input">
+                    </div>
+                </div>
+                <p id="delete-preview" style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted); text-align:center; min-height:1.2em;"></p>
+            </div>
+            <p id="delete-warning" style="margin-top:1rem; text-align:center; font-size:0.9rem; color:var(--text-muted);">Esta acción eliminará todos los movimientos y no se puede deshacer.</p>
             <div style="display:flex; gap:1rem; margin-top:1.5rem;">
-                <button id="btn-confirm-clear" class="btn-danger" style="flex:1; justify-content:center;">Sí, borrar todo</button>
+                <button id="btn-confirm-clear" class="btn-danger" style="flex:1; justify-content:center;">Sí, borrar</button>
                 <button id="btn-cancel-clear" class="btn-secondary" style="flex:1; justify-content:center;">Cancelar</button>
             </div>
         </div>
