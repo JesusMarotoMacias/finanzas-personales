@@ -138,6 +138,11 @@
                             <option value="all">Todos los años</option>
                         </select>
                         <input type="text" id="filter-search" class="filter-input" placeholder="🔍 Buscar concepto...">
+                        <div class="filter-amount-range">
+                            <input type="number" id="filter-amount-min" class="filter-input filter-amount" placeholder="Min €" min="0" step="0.01">
+                            <span class="filter-amount-sep">—</span>
+                            <input type="number" id="filter-amount-max" class="filter-amount filter-input" placeholder="Max €" min="0" step="0.01">
+                        </div>
                     </div>
                 </div>
                 <div class="table-wrapper">

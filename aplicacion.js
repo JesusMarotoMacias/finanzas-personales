@@ -1062,6 +1062,8 @@ function getFilteredTransactions() {
     const filterMonthVal = document.getElementById('filter-month').value;
     const filterYearVal = document.getElementById('filter-year').value;
     const filterSearch = document.getElementById('filter-search').value.toLowerCase().trim();
+    const filterAmountMin = parseFloat(document.getElementById('filter-amount-min').value);
+    const filterAmountMax = parseFloat(document.getElementById('filter-amount-max').value);
 
     let result = [...appData.transactions];
 
@@ -1070,7 +1072,6 @@ function getFilteredTransactions() {
     }
     if (filterCategoryVal !== 'all') {
         if (filterCategoryVal === "__review__") {
-            // Filtrar movimientos que no están en el mapeo aprendido o marcados como manuales
             result = result.filter(t => !categoryMappings[t.rawCategory] && !t.manual);
         } else {
             result = result.filter(t => t.category === filterCategoryVal);
@@ -1087,6 +1088,12 @@ function getFilteredTransactions() {
             (t.rawCategory && t.rawCategory.toLowerCase().includes(filterSearch)) ||
             (t.category && t.category.toLowerCase().includes(filterSearch))
         );
+    }
+    if (!isNaN(filterAmountMin)) {
+        result = result.filter(t => Math.abs(t.amount) >= filterAmountMin);
+    }
+    if (!isNaN(filterAmountMax)) {
+        result = result.filter(t => Math.abs(t.amount) <= filterAmountMax);
     }
 
     // Ordenar
@@ -1253,6 +1260,8 @@ filterCategory.addEventListener('change', () => { tableCurrentPage = 1; updateDa
 filterMonth.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
 filterYear.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
 filterSearch.addEventListener('input', () => { tableCurrentPage = 1; updateDashboard(); });
+document.getElementById('filter-amount-min').addEventListener('input', () => { tableCurrentPage = 1; renderTable(); });
+document.getElementById('filter-amount-max').addEventListener('input', () => { tableCurrentPage = 1; renderTable(); });
 
 // Listeners de ordenación por columna
 document.querySelectorAll('th.sortable').forEach(th => {

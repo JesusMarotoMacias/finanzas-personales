@@ -398,6 +398,9 @@ input[type="file"] { display: none; }
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 .filter-input { width: 200px; cursor: text; }
+.filter-amount-range { display: flex; align-items: center; gap: 0.4rem; }
+.filter-amount { width: 90px; }
+.filter-amount-sep { color: var(--text-muted); font-size: 0.9rem; flex-shrink: 0; }
 
 .table-wrapper {
     overflow-x: auto;
