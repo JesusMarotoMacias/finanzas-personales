@@ -1117,7 +1117,7 @@ function renderTable() {
             const globalIdx = startIdx + idx;
             const d = new Date(t.date);
             const dateStr = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const amountStr = formatCurrency(Math.abs(t.amount));
+            const amountStr = formatCurrency(t.amount);
             let amountClass = 'expense-amount';
             let badgeClass = 'badge-expense';
             let badgeText = '📉 Gasto';
