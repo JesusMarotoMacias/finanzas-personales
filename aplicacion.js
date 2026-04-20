@@ -1119,18 +1119,15 @@ function renderTable() {
             const dateStr = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const amountStr = formatCurrency(Math.abs(t.amount));
             let amountClass = 'expense-amount';
-            let amountSign = '−';
             let badgeClass = 'badge-expense';
             let badgeText = '📉 Gasto';
 
             if (t.type === 'income') {
                 amountClass = 'income-amount';
-                amountSign = '+';
                 badgeClass = 'badge-income';
                 badgeText = '📈 Ingreso';
             } else if (t.type === 'transfer') {
                 amountClass = 'transfer-amount';
-                amountSign = '🔄';
                 badgeClass = 'badge-transfer';
                 badgeText = '🔄 Traspaso';
             }
@@ -1142,7 +1139,7 @@ function renderTable() {
                     <div style="font-weight: 600;">${t.rawCategory || 'Sin concepto'}</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">${getCategoryIcon(t.category)} ${t.category}</div>
                 </td>
-                <td class="td-amount ${amountClass}">${amountSign} ${amountStr}</td>
+                <td class="td-amount ${amountClass}">${amountStr}</td>
                 <td><span class="badge-type ${badgeClass}">${badgeText}</span></td>
                 <td>
                     <div style="display:flex; gap:0.5rem; justify-content:center;">
