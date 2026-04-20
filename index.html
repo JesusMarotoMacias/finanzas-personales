@@ -22,6 +22,7 @@
         <header class="glass-header">
             <div class="logo">
                 <h1>💰 Finanzas Personales</h1>
+                <span class="logo-sub">Tu control financiero</span>
             </div>
             <div class="header-actions">
                 <button id="btn-add-manual" class="btn-secondary" title="Añadir movimiento manualmente">
@@ -56,19 +57,28 @@
             <!-- Resumen numérico -->
             <section class="summary-section fade-in delay-1">
                 <div class="summary-card income">
-                    <div class="summary-icon">📈</div>
-                    <h3>Ingresos Totales</h3>
-                    <p id="total-income" class="amount">0,00 €</p>
+                    <div class="summary-icon-wrap">📈</div>
+                    <div class="summary-data">
+                        <h3>Ingresos Totales</h3>
+                        <p id="total-income" class="amount">0,00 €</p>
+                        <span class="summary-sub" id="count-income"></span>
+                    </div>
                 </div>
                 <div class="summary-card expenses">
-                    <div class="summary-icon">📉</div>
-                    <h3>Gastos Totales</h3>
-                    <p id="total-expenses" class="amount">0,00 €</p>
+                    <div class="summary-icon-wrap">📉</div>
+                    <div class="summary-data">
+                        <h3>Gastos Totales</h3>
+                        <p id="total-expenses" class="amount">0,00 €</p>
+                        <span class="summary-sub" id="count-expenses"></span>
+                    </div>
                 </div>
                 <div class="summary-card balance">
-                    <div class="summary-icon">⚖️</div>
-                    <h3>Balance General</h3>
-                    <p id="total-balance" class="amount">0,00 €</p>
+                    <div class="summary-icon-wrap">⚖️</div>
+                    <div class="summary-data">
+                        <h3>Balance General</h3>
+                        <p id="total-balance" class="amount">0,00 €</p>
+                        <span class="summary-sub" id="count-balance"></span>
+                    </div>
                 </div>
             </section>
 

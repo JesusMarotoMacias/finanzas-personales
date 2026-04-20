@@ -941,6 +941,8 @@ function updateDashboard() {
 
     let totalIncome = 0;
     let totalExpenses = 0;
+    let countIncome = 0;
+    let countExpenses = 0;
     const expensesByCategory = {};
     const incomeByCategory = {};
     const balanceByMonth = {};
@@ -964,9 +966,11 @@ function updateDashboard() {
 
         if (t.type === 'income') {
             totalIncome += t.amount;
+            countIncome++;
             incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
         } else if (t.type === 'expense') {
             totalExpenses += Math.abs(t.amount);
+            countExpenses++;
             if (!incomeFixedCats.includes(t.category)) {
                 expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
             }
@@ -986,6 +990,13 @@ function updateDashboard() {
     totalExpensesElement.textContent = formatCurrency(totalExpenses);
     totalBalanceElement.textContent = formatCurrency(balance);
     totalBalanceElement.style.color = balance >= 0 ? 'var(--income)' : 'var(--expense)';
+
+    const elCountIncome = document.getElementById('count-income');
+    const elCountExpenses = document.getElementById('count-expenses');
+    const elCountBalance = document.getElementById('count-balance');
+    if (elCountIncome) elCountIncome.textContent = countIncome > 0 ? `${countIncome} ingreso${countIncome !== 1 ? 's' : ''}` : '';
+    if (elCountExpenses) elCountExpenses.textContent = countExpenses > 0 ? `${countExpenses} gasto${countExpenses !== 1 ? 's' : ''}` : '';
+    if (elCountBalance) elCountBalance.textContent = (countIncome + countExpenses) > 0 ? `${countIncome + countExpenses} movimientos` : '';
 
     drawCharts(expensesByCategory, incomeByCategory, balanceByMonth);
     updateTableFilters();
