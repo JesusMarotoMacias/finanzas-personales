@@ -228,6 +228,13 @@ btnSaveCategories.addEventListener('click', () => {
         }
         categoryMappings[rawConcept] = chosenCategory;
         learnCategory(rawConcept, chosenCategory);
+
+        const selectedType = row.dataset.selectedType;
+        if (selectedType) {
+            pendingTransactions.forEach(t => {
+                if (t.rawCategory === rawConcept) t.type = selectedType;
+            });
+        }
     });
 
     localStorage.setItem('categoryMappings', JSON.stringify(categoryMappings));
@@ -243,6 +250,8 @@ function showCategoryWizard(unknownConceptsData) {
         const row = document.createElement('div');
         row.className = 'category-row';
         row.dataset.concept = concept;
+        const defaultType = amount > 0 ? 'income' : 'expense';
+        row.dataset.selectedType = defaultType;
 
         const label = document.createElement('div');
         label.className = 'concept-name-wrapper';
@@ -293,8 +302,28 @@ function showCategoryWizard(unknownConceptsData) {
             customInput.style.display = select.value === '__custom__' ? 'block' : 'none';
         });
 
+        const typeToggle = document.createElement('div');
+        typeToggle.className = 'type-toggle wizard-type-toggle';
+        [
+            { type: 'expense', label: '📉 Gasto' },
+            { type: 'income',  label: '📈 Ingreso' },
+            { type: 'transfer', label: '🔄 Traspaso' },
+        ].forEach(({ type, label }) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `type-btn ${type}-btn${type === defaultType ? ' active' : ''}`;
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                typeToggle.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                row.dataset.selectedType = type;
+            });
+            typeToggle.appendChild(btn);
+        });
+
         selectWrapper.appendChild(select);
         selectWrapper.appendChild(customInput);
+        selectWrapper.appendChild(typeToggle);
         row.appendChild(label);
         row.appendChild(selectWrapper);
         unknownConceptsContainer.appendChild(row);
@@ -434,16 +463,28 @@ const manualDate = document.getElementById('manual-date');
 const manualConcept = document.getElementById('manual-concept');
 const manualCategory = document.getElementById('manual-category');
 const manualAmount = document.getElementById('manual-amount');
+const amountSignBtn = document.getElementById('amount-sign-btn');
 
 // Manejo de botones de tipo (Gasto / Ingreso / Traspaso)
 const typeButtons = document.querySelectorAll('.type-btn');
 let currentManualType = 'expense';
+let currentAmountSign = -1;
+
+function setAmountSign(sign) {
+    currentAmountSign = sign;
+    amountSignBtn.textContent = sign === 1 ? '+' : '−';
+    amountSignBtn.classList.toggle('positive', sign === 1);
+    amountSignBtn.classList.toggle('negative', sign === -1);
+}
+
+amountSignBtn.addEventListener('click', () => setAmountSign(currentAmountSign === -1 ? 1 : -1));
 
 typeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         typeButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentManualType = btn.dataset.type;
+        setAmountSign(btn.dataset.type === 'expense' ? -1 : 1);
     });
 });
 
@@ -502,6 +543,7 @@ function openManualModal(editIdx = null) {
         document.getElementById('manual-concept').value = t.rawCategory || t.category;
         document.getElementById('manual-category').value = t.category;
         document.getElementById('manual-amount').value = Math.abs(t.amount);
+        setAmountSign(t.amount >= 0 ? 1 : -1);
 
         // Activar el botón de tipo correspondiente
         typeButtons.forEach(b => b.classList.remove('active'));
@@ -519,6 +561,7 @@ function openManualModal(editIdx = null) {
         typeButtons.forEach(b => b.classList.remove('active'));
         document.getElementById('type-expense').classList.add('active');
         currentManualType = 'expense';
+        setAmountSign(-1);
     }
 
     manualModal.classList.remove('hidden');
@@ -545,14 +588,14 @@ manualForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Gasto es negativo. Ingreso y Traspaso son positivos (pero el Traspaso se ignora en el balance total)
-    const finalAmount = currentManualType === 'expense' ? -Math.abs(amount) : Math.abs(amount);
+    const finalAmount = currentAmountSign * Math.abs(amount);
     
     let chosenCategory = manualCategory.value;
     if (chosenCategory === '__custom__' && manualCustomInput.value.trim() !== '') {
         chosenCategory = manualCustomInput.value.trim();
         if (!availableCategories.includes(chosenCategory)) {
             availableCategories.push(chosenCategory);
+            availableCategories.sort();
             saveCategories();
             refreshCategoryOptions();
         }

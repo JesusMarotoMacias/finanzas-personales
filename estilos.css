@@ -572,6 +572,34 @@ tbody tr:last-child td { border-bottom: none; }
     color: var(--text-color);
 }
 .td-amount.transfer-amount { color: var(--text-muted); }
+.wizard-type-toggle { margin-top: 0.4rem; gap: 0.4rem; }
+.wizard-type-toggle .type-btn { padding: 0.35rem 0.25rem; font-size: 0.72rem; }
+.amount-wrapper { display: flex; gap: 0.5rem; align-items: center; }
+.amount-wrapper .form-input { flex: 1; }
+.amount-sign-btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    flex-shrink: 0;
+    border-radius: 0.65rem;
+    border: 2px solid var(--border-color);
+    background: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: inherit;
+    transition: all 0.2s;
+    line-height: 1;
+}
+.amount-sign-btn.negative {
+    border-color: var(--expense);
+    color: var(--expense);
+    background: rgba(239, 68, 68, 0.1);
+}
+.amount-sign-btn.positive {
+    border-color: var(--income);
+    color: var(--income);
+    background: rgba(16, 185, 129, 0.1);
+}
 
 /* ==========================================
    OPCIONES DE EXPORTACIÓN
@@ -651,7 +679,7 @@ tbody tr:last-child td { border-bottom: none; }
 .category-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 0.75rem 0;
     border-bottom: 1px solid var(--border-color);
     gap: 1rem;
@@ -854,8 +882,8 @@ tbody tr:last-child td { border-bottom: none; }
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
-    .td-amount.income-amount  { color: #059669 !important; -webkit-print-color-adjust: exact; }
-    .td-amount.expense-amount { color: #dc2626 !important; -webkit-print-color-adjust: exact; }
+    .td-amount.income-amount  { color: #059669 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .td-amount.expense-amount { color: #dc2626 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #transactions-section { display: block !important; }
     .table-footer { display: none; }
 }
