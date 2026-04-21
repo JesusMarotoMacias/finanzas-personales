@@ -255,18 +255,18 @@ function showCategoryWizard(unknownConceptsData) {
 
         const label = document.createElement('div');
         label.className = 'concept-name-wrapper';
-        
+
         const conceptTitle = document.createElement('div');
         conceptTitle.className = 'concept-name';
         conceptTitle.textContent = concept;
-        
+
         const amountSubtitle = document.createElement('div');
         amountSubtitle.className = 'concept-amount-subtitle';
         amountSubtitle.textContent = `Importe: ${formatCurrency(amount)}`;
         amountSubtitle.style.fontSize = '0.75rem';
         amountSubtitle.style.opacity = '0.7';
         amountSubtitle.style.marginTop = '0.1rem';
-        
+
         label.appendChild(conceptTitle);
         label.appendChild(amountSubtitle);
 
@@ -306,7 +306,7 @@ function showCategoryWizard(unknownConceptsData) {
         typeToggle.className = 'type-toggle wizard-type-toggle';
         [
             { type: 'expense', label: '📉 Gasto' },
-            { type: 'income',  label: '📈 Ingreso' },
+            { type: 'income', label: '📈 Ingreso' },
             { type: 'transfer', label: '🔄 Traspaso' },
         ].forEach(({ type, label }) => {
             const btn = document.createElement('button');
@@ -562,7 +562,7 @@ function refreshCategoryOptions() {
         customOptManual.textContent = '✏️ Nueva categoría...';
         manualCategory.appendChild(customOptManual);
     }
-    
+
     // 2. Select para Filtros (se actualiza también en updateTableFilters)
     updateTableFilters();
 }
@@ -648,7 +648,7 @@ manualForm.addEventListener('submit', (e) => {
     }
 
     const finalAmount = currentAmountSign * Math.abs(amount);
-    
+
     let chosenCategory = manualCategory.value;
     if (chosenCategory === '__custom__' && manualCustomInput.value.trim() !== '') {
         chosenCategory = manualCustomInput.value.trim();
@@ -667,11 +667,11 @@ manualForm.addEventListener('submit', (e) => {
 
     const transaction = {
         rawCategory: concept,
-        category:    chosenCategory,
-        amount:      finalAmount,
-        date:        new Date(manualDate.value).toISOString(),
-        type:        currentManualType,
-        manual:      true
+        category: chosenCategory,
+        amount: finalAmount,
+        date: new Date(manualDate.value).toISOString(),
+        type: currentManualType,
+        manual: true
     };
 
     if (editingTransactionIndex !== null) {
@@ -826,7 +826,7 @@ function processExcelData(data) {
             // Reemplazar diferentes tipos de guiones/signos menos por el estándar "-"
             // y limpiar símbolos de moneda y espacios
             rawAmt = rawAmt.replace(/[−–—]/g, '-').replace(/[€$\s]/g, '');
-            
+
             // Lógica para detectar formato español (1.234,56)
             // Si hay puntos y comas, los puntos son miles y la coma es decimal
             if (rawAmt.includes('.') && rawAmt.includes(',')) {
@@ -910,7 +910,7 @@ function processExcelData(data) {
     if (unknownConcepts.size > 0) {
         uploadStatus.textContent = `🔍 Se encontraron ${unknownConcepts.size} concepto(s) nuevo(s). Asígneles una categoría para continuar.`;
         uploadStatus.className = 'status-msg';
-        
+
         // Convertimos el Map en un array de objetos para el wizard
         const wizardData = Array.from(unknownConcepts.entries()).map(([concept, amount]) => ({
             concept,
@@ -969,10 +969,10 @@ function updateDashboard() {
             countIncome++;
             incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + t.amount;
         } else if (t.type === 'expense') {
-            totalExpenses += Math.abs(t.amount);
+            totalExpenses -= t.amount;
             countExpenses++;
             if (!incomeFixedCats.includes(t.category)) {
-                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
+                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) - t.amount;
             }
         }
 
@@ -981,7 +981,7 @@ function updateDashboard() {
         if (t.type === 'income') {
             balanceByMonth[mk].income += t.amount;
         } else if (t.type === 'expense') {
-            balanceByMonth[mk].expense += Math.abs(t.amount);
+            balanceByMonth[mk].expense -= t.amount;
         }
     });
 
@@ -1015,7 +1015,7 @@ function updateTableFilters() {
     const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
     const currentCat = filterCategory.value;
     filterCategory.innerHTML = '<option value="all">Todas las categorías</option>';
-    
+
     // Opción especial para ver los que el sistema no conoce bien
     const optReview = document.createElement('option');
     optReview.value = "__review__";
@@ -1037,14 +1037,14 @@ function updateTableFilters() {
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     for (let i = 1; i <= 12; i++) {
         const opt = document.createElement('option');
-        opt.value = i; opt.textContent = monthNames[i-1];
+        opt.value = i; opt.textContent = monthNames[i - 1];
         filterMonth.appendChild(opt);
     }
     if (currentMonth) filterMonth.value = currentMonth;
 
     // Años (dinámicos)
     const currentYear = filterYear.value;
-    const years = [...new Set(appData.transactions.map(t => new Date(t.date).getFullYear()))].sort((a,b) => b-a);
+    const years = [...new Set(appData.transactions.map(t => new Date(t.date).getFullYear()))].sort((a, b) => b - a);
     filterYear.innerHTML = '<option value="all">Todos los años</option>';
     years.forEach(y => {
         if (!isNaN(y)) {
@@ -1303,14 +1303,14 @@ function openSplitModal(realIdx) {
     splittingTransactionIndex = realIdx;
     const t = appData.transactions[realIdx];
     originalSplitAmount = Math.abs(t.amount);
-    
+
     splitOriginalAmountText.textContent = formatCurrency(originalSplitAmount);
     splitRowsContainer.innerHTML = '';
-    
+
     // Añadimos dos filas iniciales para empezar a fraccionar
     addSplitRow(t.category, originalSplitAmount);
     addSplitRow('Otros', 0);
-    
+
     updateSplitCalculation();
     splitModal.classList.remove('hidden');
 }
@@ -1318,7 +1318,7 @@ function openSplitModal(realIdx) {
 function addSplitRow(category = 'Otros', amount = 0) {
     const row = document.createElement('div');
     row.className = 'split-row-item';
-    
+
     const select = document.createElement('select');
     select.className = 'form-input category-select';
     availableCategories.forEach(cat => {
@@ -1327,7 +1327,7 @@ function addSplitRow(category = 'Otros', amount = 0) {
         if (cat === category) opt.selected = true;
         select.appendChild(opt);
     });
-    
+
     const input = document.createElement('input');
     input.type = 'number';
     input.className = 'form-input amount-input';
@@ -1335,7 +1335,7 @@ function addSplitRow(category = 'Otros', amount = 0) {
     input.min = '0';
     input.value = amount.toFixed(2);
     input.placeholder = 'Importe';
-    
+
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-close';
     btnDel.textContent = '✕';
@@ -1343,10 +1343,10 @@ function addSplitRow(category = 'Otros', amount = 0) {
         row.remove();
         updateSplitCalculation();
     });
-    
+
     input.addEventListener('input', updateSplitCalculation);
     select.addEventListener('change', updateSplitCalculation);
-    
+
     row.appendChild(select);
     row.appendChild(input);
     row.appendChild(btnDel);
@@ -1359,10 +1359,10 @@ function updateSplitCalculation() {
     inputs.forEach(input => {
         currentTotal += parseFloat(input.value) || 0;
     });
-    
+
     const pending = originalSplitAmount - currentTotal;
     splitPendingAmountText.textContent = formatCurrency(pending);
-    
+
     if (Math.abs(pending) < 0.01) {
         splitPendingAmountText.className = 'correct';
         splitPendingAmountText.textContent = '✓ Total Ajustado';
@@ -1381,11 +1381,11 @@ btnSaveSplit.addEventListener('click', () => {
     const tOriginal = appData.transactions[splittingTransactionIndex];
     const rows = splitRowsContainer.querySelectorAll('.split-row-item');
     const newTransactions = [];
-    
+
     rows.forEach(row => {
         const cat = row.querySelector('.category-select').value;
         const amt = parseFloat(row.querySelector('.amount-input').value) || 0;
-        
+
         if (amt > 0) {
             newTransactions.push({
                 ...tOriginal,
@@ -1396,10 +1396,10 @@ btnSaveSplit.addEventListener('click', () => {
             });
         }
     });
-    
+
     // Reemplazamos el original por los nuevos trozos
     appData.transactions.splice(splittingTransactionIndex, 1, ...newTransactions);
-    
+
     saveData(false);
     updateDashboard();
     splitModal.classList.add('hidden');
@@ -1453,7 +1453,7 @@ function exportToCSV() {
         });
 
     const totalIncome = appData.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const totalExpenses = appData.transactions.filter(t => t.type !== 'income').reduce((s, t) => s + Math.abs(t.amount), 0);
+    const totalExpenses = appData.transactions.filter(t => t.type !== 'income').reduce((s, t) => s - t.amount, 0);
     const balance = totalIncome - totalExpenses;
 
     const allRows = [
@@ -1492,17 +1492,17 @@ function initChartControls() {
         btn.addEventListener('click', () => {
             const chartId = btn.closest('.chart-controls').dataset.chartId;
             const type = btn.dataset.type;
-            
+
             if (chartId === 'expenses') {
                 currentExpensesChartType = type;
             } else {
                 currentIncomeChartType = type;
             }
-            
+
             // Actualizar UI de botones
             btn.parentElement.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
+
             updateDashboard();
         });
     });
@@ -1566,12 +1566,12 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
             type: currentExpensesChartType,
             data: {
                 labels: Object.keys(expensesMap),
-                datasets: [{ 
+                datasets: [{
                     label: 'Gasto Total',
-                    data: Object.values(expensesMap), 
-                    backgroundColor: chartPalette, 
-                    borderWidth: 2, 
-                    borderColor: 'transparent' 
+                    data: Object.values(expensesMap),
+                    backgroundColor: chartPalette,
+                    borderWidth: 2,
+                    borderColor: 'transparent'
                 }]
             },
             options: getOptions(currentExpensesChartType)
@@ -1586,12 +1586,12 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
             type: currentIncomeChartType,
             data: {
                 labels: Object.keys(incomeMap),
-                datasets: [{ 
+                datasets: [{
                     label: 'Ingreso Total',
-                    data: Object.values(incomeMap), 
-                    backgroundColor: chartPalette, 
-                    borderWidth: 2, 
-                    borderColor: 'transparent' 
+                    data: Object.values(incomeMap),
+                    backgroundColor: chartPalette,
+                    borderWidth: 2,
+                    borderColor: 'transparent'
                 }]
             },
             options: getOptions(currentIncomeChartType)
