@@ -138,6 +138,7 @@ let filteredTransactions = [];
 let categoryMappings = JSON.parse(localStorage.getItem('categoryMappings')) || {};
 
 const defaultCategories = [
+    "Salario",
     "Ingresos Fijos",
     "Ingresos Extras",
     "Vivienda / Alquiler",
@@ -156,6 +157,7 @@ const defaultCategories = [
 ];
 
 const categoryIcons = {
+    "Salario": "💼",
     "Ingresos Fijos": "💰",
     "Ingresos Extras": "🎁",
     "Vivienda / Alquiler": "🏠",
@@ -964,7 +966,7 @@ function updateDashboard() {
         if (filterYearVal !== 'all' && tYear !== filterYearVal) return;
 
         // Categorías que nunca deben aparecer en gastos por definición
-        const incomeFixedCats = ['Ingresos Fijos', 'Otros Ingresos', 'Nómina', 'Ventas'];
+        const incomeFixedCats = ['Salario', 'Ingresos Fijos', 'Otros Ingresos', 'Nómina', 'Ventas'];
 
         if (t.type === 'income') {
             totalIncome += t.amount;
@@ -1603,43 +1605,79 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
     ];
 
     // Gráfico de Gastos
-    const ctxExp = document.getElementById('expenses-chart').getContext('2d');
+    const expCanvas = document.getElementById('expenses-chart');
+    const expListEl = document.getElementById('expenses-list');
     if (expensesChart) expensesChart.destroy();
-    if (hasExpenses) {
-        expensesChart = new Chart(ctxExp, {
-            type: currentExpensesChartType,
-            data: {
-                labels: Object.keys(expensesMap),
-                datasets: [{
-                    label: 'Gasto Total',
-                    data: Object.values(expensesMap),
-                    backgroundColor: chartPalette,
-                    borderWidth: 2,
-                    borderColor: 'transparent'
-                }]
-            },
-            options: getOptions(currentExpensesChartType)
-        });
+    if (currentExpensesChartType === 'list') {
+        expCanvas.style.display = 'none';
+        expListEl.classList.add('active');
+        expListEl.innerHTML = Object.entries(expensesMap)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, val]) => `
+                <div class="category-list-item">
+                    <span class="category-list-icon">${getCategoryIcon(cat)}</span>
+                    <span class="category-list-name">${cat}</span>
+                    <span class="category-list-amount expense">${formatCurrency(val)}</span>
+                </div>`)
+            .join('');
+    } else {
+        expCanvas.style.display = '';
+        expListEl.classList.remove('active');
+        expListEl.innerHTML = '';
+        if (hasExpenses) {
+            expensesChart = new Chart(expCanvas.getContext('2d'), {
+                type: currentExpensesChartType,
+                data: {
+                    labels: Object.keys(expensesMap),
+                    datasets: [{
+                        label: 'Gasto Total',
+                        data: Object.values(expensesMap),
+                        backgroundColor: chartPalette,
+                        borderWidth: 2,
+                        borderColor: 'transparent'
+                    }]
+                },
+                options: getOptions(currentExpensesChartType)
+            });
+        }
     }
 
     // Gráfico de Ingresos
-    const ctxInc = document.getElementById('income-chart').getContext('2d');
+    const incCanvas = document.getElementById('income-chart');
+    const incListEl = document.getElementById('income-list');
     if (incomeChart) incomeChart.destroy();
-    if (hasIncome) {
-        incomeChart = new Chart(ctxInc, {
-            type: currentIncomeChartType,
-            data: {
-                labels: Object.keys(incomeMap),
-                datasets: [{
-                    label: 'Ingreso Total',
-                    data: Object.values(incomeMap),
-                    backgroundColor: chartPalette,
-                    borderWidth: 2,
-                    borderColor: 'transparent'
-                }]
-            },
-            options: getOptions(currentIncomeChartType)
-        });
+    if (currentIncomeChartType === 'list') {
+        incCanvas.style.display = 'none';
+        incListEl.classList.add('active');
+        incListEl.innerHTML = Object.entries(incomeMap)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, val]) => `
+                <div class="category-list-item">
+                    <span class="category-list-icon">${getCategoryIcon(cat)}</span>
+                    <span class="category-list-name">${cat}</span>
+                    <span class="category-list-amount income">${formatCurrency(val)}</span>
+                </div>`)
+            .join('');
+    } else {
+        incCanvas.style.display = '';
+        incListEl.classList.remove('active');
+        incListEl.innerHTML = '';
+        if (hasIncome) {
+            incomeChart = new Chart(incCanvas.getContext('2d'), {
+                type: currentIncomeChartType,
+                data: {
+                    labels: Object.keys(incomeMap),
+                    datasets: [{
+                        label: 'Ingreso Total',
+                        data: Object.values(incomeMap),
+                        backgroundColor: chartPalette,
+                        borderWidth: 2,
+                        borderColor: 'transparent'
+                    }]
+                },
+                options: getOptions(currentIncomeChartType)
+            });
+        }
     }
 
     // Gráfico de Evolución Mensual (barras + línea)

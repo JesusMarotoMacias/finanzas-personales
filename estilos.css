@@ -359,6 +359,52 @@ input[type="file"] { display: none; }
     padding: 0.5rem;
 }
 
+.category-list-view {
+    display: none;
+    position: absolute;
+    inset: 0.5rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow: hidden;
+}
+.category-list-view.active {
+    display: flex;
+}
+.category-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--bg-primary);
+    border-radius: 0.55rem;
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+    min-height: 0;
+}
+.category-list-icon {
+    font-size: 1.1rem;
+    width: 1.4rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+.category-list-name {
+    flex: 1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.category-list-amount {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+.category-list-amount.expense { color: var(--expense); }
+.category-list-amount.income  { color: var(--income); }
+
 /* ==========================================
    TABLA DE MOVIMIENTOS
    ========================================== */
