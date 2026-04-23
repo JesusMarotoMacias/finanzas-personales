@@ -1625,13 +1625,14 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
         expListEl.classList.remove('active');
         expListEl.innerHTML = '';
         if (hasExpenses) {
+            const sortedExp = Object.entries(expensesMap).sort((a, b) => b[1] - a[1]);
             expensesChart = new Chart(expCanvas.getContext('2d'), {
                 type: currentExpensesChartType,
                 data: {
-                    labels: Object.keys(expensesMap),
+                    labels: sortedExp.map(([cat]) => cat),
                     datasets: [{
                         label: 'Gasto Total',
-                        data: Object.values(expensesMap),
+                        data: sortedExp.map(([, val]) => val),
                         backgroundColor: chartPalette,
                         borderWidth: 2,
                         borderColor: 'transparent'
@@ -1663,13 +1664,14 @@ function drawCharts(expensesMap, incomeMap, monthsMap) {
         incListEl.classList.remove('active');
         incListEl.innerHTML = '';
         if (hasIncome) {
+            const sortedInc = Object.entries(incomeMap).sort((a, b) => b[1] - a[1]);
             incomeChart = new Chart(incCanvas.getContext('2d'), {
                 type: currentIncomeChartType,
                 data: {
-                    labels: Object.keys(incomeMap),
+                    labels: sortedInc.map(([cat]) => cat),
                     datasets: [{
                         label: 'Ingreso Total',
-                        data: Object.values(incomeMap),
+                        data: sortedInc.map(([, val]) => val),
                         backgroundColor: chartPalette,
                         borderWidth: 2,
                         borderColor: 'transparent'
