@@ -500,10 +500,14 @@ btnConfirmClear.addEventListener('click', () => {
     uploadStatus.className = 'status-msg';
     fileInput.value = '';
 
-    // Destruir gráficos
+    // Destruir gráficos y limpiar vistas lista
     if (expensesChart) { expensesChart.destroy(); expensesChart = null; }
     if (incomeChart) { incomeChart.destroy(); incomeChart = null; }
     if (evolutionChart) { evolutionChart.destroy(); evolutionChart = null; }
+    const expListEl = document.getElementById('expenses-list');
+    const incListEl = document.getElementById('income-list');
+    if (expListEl) { expListEl.classList.remove('active'); expListEl.innerHTML = ''; }
+    if (incListEl) { incListEl.classList.remove('active'); incListEl.innerHTML = ''; }
 
     // Ocultar tabla y botones de acción
     document.getElementById('transactions-section').style.display = 'none';
