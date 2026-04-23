@@ -171,7 +171,7 @@ const categoryIcons = {
     "Ahorro / Inversión": "📈",
     "Otros": "⚙️",
     "Suscripciones": "📺",
-    "Traspaso": "⇄"
+    "No computable": "⇄"
 };
 
 function getCategoryIcon(cat) {
@@ -307,7 +307,7 @@ function showCategoryWizard(unknownConceptsData) {
         [
             { type: 'expense', label: '📉 Gasto' },
             { type: 'income', label: '📈 Ingreso' },
-            { type: 'transfer', label: '🔄 Traspaso' },
+            { type: 'transfer', label: '⇄ No computable' },
         ].forEach(({ type, label }) => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -506,6 +506,7 @@ btnConfirmClear.addEventListener('click', () => {
     // Ocultar tabla y botones de acción
     document.getElementById('transactions-section').style.display = 'none';
     btnExport.style.display = 'none';
+    btnRestoreBackup.style.display = 'none';
     btnClearData.style.display = 'none';
 
     confirmClearModal.classList.add('hidden');
@@ -935,6 +936,7 @@ function updateDashboard() {
 
     if (appData.transactions.length > 0) {
         btnExport.style.display = 'inline-flex';
+        btnRestoreBackup.style.display = 'inline-flex';
         btnClearData.style.display = 'inline-flex';
         document.getElementById('transactions-section').style.display = 'block';
     }
@@ -1147,7 +1149,7 @@ function renderTable() {
             } else if (t.type === 'transfer') {
                 amountClass = 'transfer-amount';
                 badgeClass = 'badge-transfer';
-                badgeText = '🔄 Traspaso';
+                badgeText = '⇄ No computable';
             }
 
             const tr = document.createElement('tr');
@@ -1416,6 +1418,9 @@ const exportModal = document.getElementById('export-modal');
 const btnCloseExport = document.getElementById('btn-close-export');
 const btnExportCsv = document.getElementById('btn-export-csv');
 const btnExportPrint = document.getElementById('btn-export-print');
+const btnExportBackup = document.getElementById('btn-export-backup');
+const btnRestoreBackup = document.getElementById('btn-restore-backup');
+const restoreBackupInput = document.getElementById('restore-backup-input');
 
 btnExport.addEventListener('click', () => {
     exportModal.classList.remove('hidden');
@@ -1435,6 +1440,45 @@ btnExportPrint.addEventListener('click', () => {
     exportModal.classList.add('hidden');
     setTimeout(() => window.print(), 350);
 });
+
+btnExportBackup.addEventListener('click', () => {
+    exportBackupJSON();
+    exportModal.classList.add('hidden');
+});
+
+restoreBackupInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const parsed = JSON.parse(ev.target.result);
+            if (!parsed.transactions || !Array.isArray(parsed.transactions)) {
+                throw new Error('Formato inválido');
+            }
+            appData = parsed;
+            saveData(false);
+            updateDashboard();
+            showToastMessage('✅ Copia de seguridad restaurada correctamente');
+        } catch {
+            showToastMessage('❌ El archivo no es una copia de seguridad válida');
+        }
+        restoreBackupInput.value = '';
+    };
+    reader.readAsText(file);
+});
+
+function exportBackupJSON() {
+    if (appData.transactions.length === 0) return;
+    const date = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finanzas-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
 function exportToCSV() {
     if (appData.transactions.length === 0) return;

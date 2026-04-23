@@ -31,6 +31,10 @@
                 <button id="btn-export" class="btn-secondary" title="Exportar datos" style="display:none">
                     📥 Exportar
                 </button>
+                <label id="btn-restore-backup" class="btn-secondary" title="Restaurar copia de seguridad" style="cursor:pointer; display:none">
+                    📂 Restaurar copia
+                    <input type="file" id="restore-backup-input" accept=".json" style="display:none">
+                </label>
                 <button id="btn-clear-data" class="btn-danger" title="Borrar todos los datos" style="display:none">
                     🗑️ Limpiar Datos
                 </button>
@@ -126,7 +130,7 @@
                             <option value="all">Todos los tipos</option>
                             <option value="income">Solo Ingresos</option>
                             <option value="expense">Solo Gastos</option>
-                            <option value="transfer">Solo Traspasos</option>
+                            <option value="transfer">Solo No computables</option>
                         </select>
                         <select id="filter-category" class="filter-select">
                             <option value="all">Todas las categorías</option>
@@ -209,7 +213,7 @@
                     <div class="type-toggle">
                         <button type="button" id="type-expense" class="type-btn active expense-btn" data-type="expense">📉 Gasto</button>
                         <button type="button" id="type-income" class="type-btn income-btn" data-type="income">📈 Ingreso</button>
-                        <button type="button" id="type-transfer" class="type-btn transfer-btn" data-type="transfer">🔄 Traspaso</button>
+                        <button type="button" id="type-transfer" class="type-btn transfer-btn" data-type="transfer">⇄ No computable</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -247,6 +251,13 @@
                     <div>
                         <span class="export-label">Imprimir / Guardar PDF</span>
                         <span class="export-desc">Genera un informe para imprimir o guardar como PDF</span>
+                    </div>
+                </button>
+                <button id="btn-export-backup" class="export-option-btn">
+                    <span class="export-icon">💾</span>
+                    <div>
+                        <span class="export-label">Guardar copia de seguridad</span>
+                        <span class="export-desc">Guarda todos los datos clasificados en un archivo JSON para restaurarlos después</span>
                     </div>
                 </button>
             </div>
