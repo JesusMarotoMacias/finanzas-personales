@@ -508,7 +508,6 @@ btnConfirmClear.addEventListener('click', () => {
     // Ocultar tabla y botones de acción
     document.getElementById('transactions-section').style.display = 'none';
     btnExport.style.display = 'none';
-    btnRestoreBackup.style.display = 'none';
     btnClearData.style.display = 'none';
 
     confirmClearModal.classList.add('hidden');
@@ -938,7 +937,6 @@ function updateDashboard() {
 
     if (appData.transactions.length > 0) {
         btnExport.style.display = 'inline-flex';
-        btnRestoreBackup.style.display = 'inline-flex';
         btnClearData.style.display = 'inline-flex';
         document.getElementById('transactions-section').style.display = 'block';
     }
