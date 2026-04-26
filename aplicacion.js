@@ -826,10 +826,10 @@ function parseExcelData(data) {
         if (!rows[i] || rows[i].length === 0) continue;
         const rowStr = rows[i].join(' ').toLowerCase();
         if ((rowStr.includes('concepto') || rowStr.includes('descrip') || rowStr.includes('movimiento')) &&
-            (rowStr.includes('importe') || rowStr.includes('valor') || rowStr.includes('cantidad'))) {
+            (rowStr.includes('importe') || rowStr.includes('valor') || rowStr.includes('cantidad') || rowStr.includes('cargo') || rowStr.includes('abono'))) {
             headerRowIndex = i; break;
         }
-        if (rowStr.includes('fecha') && (rowStr.includes('importe') || rowStr.includes('valor'))) {
+        if (rowStr.includes('fecha') && (rowStr.includes('importe') || rowStr.includes('valor') || rowStr.includes('cargo') || rowStr.includes('abono'))) {
             headerRowIndex = i; break;
         }
     }
@@ -888,7 +888,10 @@ function detectColumns(data) {
 
     // Priority 1: match by column name
     let dateKey = keys.find(k => /fecha|f\.\s*oper|f\.oper|f\.\s*valor|date/i.test(k));
-    let amountKey = keys.find(k => !/fecha|date|saldo|balance/i.test(k) && /importe|amount|cantidad|valor/i.test(k));
+    let amountKey = keys.find(k => !/fecha|date|saldo|balance/i.test(k) && /importe|amount|cantidad/i.test(k));
+    // Detectar formato Cargos/Abonos (Santander y otros)
+    const cargoKey = keys.find(k => /^cargos?$/i.test(k.trim()));
+    const abonoKey = keys.find(k => /^abonos?$/i.test(k.trim()));
     let conceptKey = keys.find(k => /concepto|descrip|movimiento|concept|detail|text/i.test(k));
 
     // Priority 2: content-based fallback for each missing role
@@ -898,7 +901,7 @@ function detectColumns(data) {
             .sort((a, b) => scores[b].dateHits - scores[a].dateHits)
             .find(k => scores[k].dateHits > 0) || null;
     }
-    if (!amountKey) {
+    if (!amountKey && !cargoKey && !abonoKey) {
         amountKey = keys
             .filter(k => k !== dateKey && k !== conceptKey)
             .sort((a, b) => scores[b].amountHits - scores[a].amountHits)
@@ -906,11 +909,11 @@ function detectColumns(data) {
     }
     if (!conceptKey) {
         conceptKey = keys
-            .filter(k => k !== dateKey && k !== amountKey)
+            .filter(k => k !== dateKey && k !== amountKey && k !== cargoKey && k !== abonoKey)
             .sort((a, b) => scores[b].avgText - scores[a].avgText)[0] || null;
     }
 
-    return { dateKey, amountKey, conceptKey };
+    return { dateKey, amountKey, cargoKey, abonoKey, conceptKey };
 }
 
 function processExcelData(data) {
@@ -920,12 +923,24 @@ function processExcelData(data) {
         return;
     }
 
-    const { dateKey, amountKey, conceptKey } = detectColumns(data);
+    const { dateKey, amountKey, cargoKey, abonoKey, conceptKey } = detectColumns(data);
     const transactions = [];
     const unknownConcepts = new Map();
 
     data.forEach(row => {
-        const amount = amountKey ? parseAmount(row[amountKey]) : NaN;
+        let amount = NaN;
+        if (cargoKey || abonoKey) {
+            // Formato Santander: Cargos (gasto, positivo en el archivo) y Abonos (ingreso, positivo)
+            const cargo = cargoKey ? parseAmount(row[cargoKey]) : NaN;
+            const abono = abonoKey ? parseAmount(row[abonoKey]) : NaN;
+            const hasCargo = !isNaN(cargo) && cargo !== 0;
+            const hasAbono = !isNaN(abono) && abono !== 0;
+            if (hasCargo && !hasAbono) amount = -Math.abs(cargo);
+            else if (hasAbono && !hasCargo) amount = Math.abs(abono);
+            else if (hasCargo && hasAbono) amount = Math.abs(abono) - Math.abs(cargo);
+        } else {
+            amount = amountKey ? parseAmount(row[amountKey]) : NaN;
+        }
         const rawCategory = conceptKey && row[conceptKey] ? String(row[conceptKey]).trim() : 'Sin Concepto';
         const date = (dateKey && row[dateKey] !== undefined && row[dateKey] !== '')
             ? (parseDate(row[dateKey]) || new Date())
