@@ -841,6 +841,78 @@ function parseExcelData(data) {
 // ==========================================
 // PROCESAMIENTO DE DATOS
 // ==========================================
+function parseAmount(raw) {
+    let s = String(raw).trim().replace(/[−–—]/g, '-').replace(/[€$\s]/g, '');
+    if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    else if (s.includes(',')) s = s.replace(',', '.');
+    return parseFloat(s);
+}
+
+function parseDate(val) {
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+    if (typeof val === 'number') {
+        const d = new Date(new Date(Date.UTC(1899, 11, 30)).getTime() + val * 86400000);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    const s = String(val).trim();
+    const parts = s.split(/[\/\-\.]/);
+    if (parts.length === 3) {
+        const d = parts[0].length === 4
+            ? new Date(+parts[0], +parts[1] - 1, +parts[2])
+            : new Date(+parts[2], +parts[1] - 1, +parts[0]);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function detectColumns(data) {
+    const keys = data.length > 0 ? Object.keys(data[0]) : [];
+    const sample = data.slice(0, Math.min(15, data.length));
+
+    // Score each column for date, amount and concept roles
+    const scores = {};
+    keys.forEach(k => {
+        let dateHits = 0, amountHits = 0, textLen = 0, filled = 0;
+        sample.forEach(row => {
+            const v = row[k];
+            if (v === '' || v === undefined || v === null) return;
+            filled++;
+            if (parseDate(v)) dateHits++;
+            const n = parseAmount(v);
+            if (!isNaN(n) && Math.abs(n) < 1e7) amountHits++;
+            textLen += String(v).length;
+        });
+        scores[k] = { dateHits, amountHits, avgText: filled ? textLen / filled : 0, filled };
+    });
+
+    // Priority 1: match by column name
+    let dateKey = keys.find(k => /fecha|f\.\s*oper|f\.oper|f\.\s*valor|date/i.test(k));
+    let amountKey = keys.find(k => !/fecha|date|saldo|balance/i.test(k) && /importe|amount|cantidad|valor/i.test(k));
+    let conceptKey = keys.find(k => /concepto|descrip|movimiento|concept|detail|text/i.test(k));
+
+    // Priority 2: content-based fallback for each missing role
+    if (!dateKey) {
+        dateKey = keys
+            .filter(k => k !== amountKey && k !== conceptKey)
+            .sort((a, b) => scores[b].dateHits - scores[a].dateHits)
+            .find(k => scores[k].dateHits > 0) || null;
+    }
+    if (!amountKey) {
+        amountKey = keys
+            .filter(k => k !== dateKey && k !== conceptKey)
+            .sort((a, b) => scores[b].amountHits - scores[a].amountHits)
+            .find(k => scores[k].amountHits > 0) || null;
+    }
+    if (!conceptKey) {
+        conceptKey = keys
+            .filter(k => k !== dateKey && k !== amountKey)
+            .sort((a, b) => scores[b].avgText - scores[a].avgText)[0] || null;
+    }
+
+    return { dateKey, amountKey, conceptKey };
+}
+
 function processExcelData(data) {
     if (!data || data.length === 0) {
         uploadStatus.textContent = '❌ El archivo no tiene datos reconocibles.';
@@ -848,79 +920,16 @@ function processExcelData(data) {
         return;
     }
 
+    const { dateKey, amountKey, conceptKey } = detectColumns(data);
     const transactions = [];
-    const unknownConcepts = new Map(); // Concepto -> Importe de ejemplo
+    const unknownConcepts = new Map();
 
     data.forEach(row => {
-        const keys = Object.keys(row);
-        let amount = NaN;
-        let rawCategory = 'Sin Concepto';
-        let date = new Date();
-
-        // Detectar columna IMPORTE
-        // Detectar columna IMPORTE (evitando fechas como "Fecha valor" o saldos)
-        const amountKey = keys.find(k => {
-            const kl = k.toLowerCase();
-            if (kl.includes('fecha') || kl.includes('date') || kl.includes('saldo') || kl.includes('balance')) return false;
-            return kl.includes('importe') || kl.includes('valor') || kl.includes('cantidad') || kl.includes('amount');
-        });
-        if (amountKey) {
-            let rawAmt = String(row[amountKey]).trim();
-            // Reemplazar diferentes tipos de guiones/signos menos por el estándar "-"
-            // y limpiar símbolos de moneda y espacios
-            rawAmt = rawAmt.replace(/[−–—]/g, '-').replace(/[€$\s]/g, '');
-
-            // Lógica para detectar formato español (1.234,56)
-            // Si hay puntos y comas, los puntos son miles y la coma es decimal
-            if (rawAmt.includes('.') && rawAmt.includes(',')) {
-                rawAmt = rawAmt.replace(/\./g, '').replace(',', '.');
-            } else if (rawAmt.includes(',')) {
-                // Si sólo hay comas, es el separador decimal (ej: 25,50)
-                rawAmt = rawAmt.replace(',', '.');
-            }
-            // Importante: no eliminamos los puntos si no hay comas, 
-            // ya que parseFloat interpreta el punto como decimal por defecto.
-
-            amount = parseFloat(rawAmt);
-        }
-
-        // Detectar columna CONCEPTO
-        const categoryKey = keys.find(k =>
-            k.toLowerCase().includes('concepto') ||
-            k.toLowerCase().includes('categor') ||
-            k.toLowerCase().includes('descrip') ||
-            k.toLowerCase().includes('movimiento') ||
-            k.toLowerCase().includes('concept')
-        );
-        if (categoryKey && row[categoryKey]) {
-            rawCategory = String(row[categoryKey]).trim();
-        }
-
-        // Detectar columna FECHA
-        const dateKey = keys.find(k => {
-            const kl = k.toLowerCase();
-            return kl.includes('fecha') || kl.includes('date') || kl.includes('f. oper') || kl.includes('f.oper') || kl === 'f. valor' || kl === 'f. operación' || kl === 'f. operativa';
-        });
-        if (dateKey && row[dateKey] !== undefined && row[dateKey] !== '') {
-            if (row[dateKey] instanceof Date) {
-                date = row[dateKey];
-            } else if (typeof row[dateKey] === 'number') {
-                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-                date = new Date(excelEpoch.getTime() + row[dateKey] * 86400000);
-                if (isNaN(date.getTime())) date = new Date();
-            } else {
-                const rawDate = String(row[dateKey]).trim();
-                const parts = rawDate.split(/[\/\-]/);
-                if (parts.length === 3) {
-                    if (parts[0].length === 4) {
-                        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                    } else {
-                        date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-                    }
-                }
-                if (isNaN(date.getTime())) date = new Date();
-            }
-        }
+        const amount = amountKey ? parseAmount(row[amountKey]) : NaN;
+        const rawCategory = conceptKey && row[conceptKey] ? String(row[conceptKey]).trim() : 'Sin Concepto';
+        const date = (dateKey && row[dateKey] !== undefined && row[dateKey] !== '')
+            ? (parseDate(row[dateKey]) || new Date())
+            : new Date();
 
         if (!isNaN(amount) && amount !== 0) {
             const guessed = guessCategory(rawCategory);
@@ -1211,7 +1220,7 @@ function renderTable() {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${new Date(t.date).toLocaleDateString('es-ES')}</td>
+                <td>${dateStr}</td>
                 <td>
                     <div style="font-weight: 600;">${t.rawCategory || 'Sin concepto'}</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">${getCategoryIcon(t.category)} ${t.category}</div>
