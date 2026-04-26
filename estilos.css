@@ -371,8 +371,9 @@ input[type="file"] { display: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
-    padding: 1rem 0.75rem;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.1rem 0.75rem;
     border: 2px solid var(--border-color);
     border-radius: 0.85rem;
     background: var(--bg-secondary);
@@ -381,8 +382,26 @@ input[type="file"] { display: none; }
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
+    min-height: 90px;
 }
 .bank-option-btn:hover { border-color: var(--primary); background: var(--table-stripe); }
+.bank-option-logo-wrap {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+}
+.bank-option-logo {
+    height: 28px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    display: block;
+}
 .bank-logo-icon {
     width: 2.8rem;
     height: 2.8rem;
@@ -395,11 +414,18 @@ input[type="file"] { display: none; }
     color: white;
     letter-spacing: -0.02em;
 }
-.bank-santander-icon { background: #EC0000; }
-.bank-sabadell-icon  { background: #0065B3; font-size: 0.7rem; }
-.bank-abanca-icon    { background: #00A859; }
-.bank-otro-icon      { background: #64748b; }
+.bank-otro-icon { background: #64748b; }
 
+.bank-table-logo {
+    height: 16px;
+    width: auto;
+    max-width: 72px;
+    object-fit: contain;
+    display: block;
+    background: white;
+    border-radius: 3px;
+    padding: 2px 4px;
+}
 .bank-badge {
     display: inline-flex;
     align-items: center;
@@ -410,20 +436,8 @@ input[type="file"] { display: none; }
     font-weight: 700;
     color: white;
     vertical-align: middle;
+    background: #64748b;
 }
-.bank-badge-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: white;
-    opacity: 0.85;
-    flex-shrink: 0;
-}
-.bank-badge.bank-Santander { background: #EC0000; }
-.bank-badge.bank-Sabadell  { background: #0065B3; }
-.bank-badge.bank-ABANCA    { background: #00A859; }
-.bank-badge.bank-Otro      { background: #64748b; }
-.bank-badge.bank-manual    { background: #8b5cf6; }
 
 .category-list-view {
     display: none;

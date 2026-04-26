@@ -1227,7 +1227,11 @@ function renderTable() {
                 </td>
                 <td class="td-amount ${amountClass}">${amountStr}</td>
                 <td><span class="badge-type ${badgeClass}">${badgeText}</span></td>
-                <td>${t.bank ? `<span class="bank-badge bank-${t.bank}"><span class="bank-badge-dot"></span>${t.bank}</span>` : '<span style="color:var(--text-muted);font-size:0.75rem;">—</span>'}</td>
+                <td>${['Santander','Sabadell','ABANCA'].includes(t.bank)
+                    ? `<img src="/logos/${t.bank.toLowerCase()}.svg" class="bank-table-logo" alt="${t.bank}" title="${t.bank}">`
+                    : t.bank
+                        ? `<span class="bank-badge">${t.bank}</span>`
+                        : '<span style="color:var(--text-muted);font-size:0.75rem;">—</span>'}</td>
                 <td>
                     <div style="display:flex; gap:0.5rem; justify-content:center;">
                         <button class="btn-row-action btn-row-split" data-index="${globalIdx}" title="Fraccionar movimiento">✂️</button>
