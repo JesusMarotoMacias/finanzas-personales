@@ -339,6 +339,7 @@ function showCategoryWizard(unknownConceptsData) {
 function processPendingTransactions() {
     pendingTransactions.forEach(t => {
         t.category = categoryMappings[t.rawCategory] || guessCategory(t.rawCategory) || t.rawCategory || 'Otros';
+        t.bank = currentImportBank;
     });
 
     const existingKeys = new Set(appData.transactions.map(t => `${t.date}|${t.amount}|${t.rawCategory}`));
@@ -708,15 +709,43 @@ manualForm.addEventListener('submit', (e) => {
 // ==========================================
 // LECTURA DE ARCHIVO (EXCEL Y CSV)
 // ==========================================
+let currentImportBank = 'Otro';
+let pendingFileToRead = null;
+
+const bankModal = document.getElementById('bank-modal');
+document.getElementById('btn-close-bank-modal').addEventListener('click', () => {
+    bankModal.classList.add('hidden');
+    fileInput.value = '';
+    pendingFileToRead = null;
+});
+bankModal.addEventListener('click', (e) => {
+    if (e.target === bankModal) {
+        bankModal.classList.add('hidden');
+        fileInput.value = '';
+        pendingFileToRead = null;
+    }
+});
+document.querySelectorAll('.bank-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentImportBank = btn.dataset.bank;
+        bankModal.classList.add('hidden');
+        if (pendingFileToRead) readFile(pendingFileToRead);
+        pendingFileToRead = null;
+    });
+});
+
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    pendingFileToRead = file;
+    bankModal.classList.remove('hidden');
+});
 
+function readFile(file) {
     uploadStatus.textContent = '⏳ Leyendo archivo...';
     uploadStatus.className = 'status-msg';
 
-    const fileName = file.name.toLowerCase();
-    const isCSV = fileName.endsWith('.csv');
+    const isCSV = file.name.toLowerCase().endsWith('.csv');
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -743,7 +772,7 @@ fileInput.addEventListener('change', (e) => {
     } else {
         reader.readAsArrayBuffer(file);
     }
-});
+}
 
 function parseCsvText(text) {
     const semicolonCount = (text.match(/;/g) || []).length;
@@ -1021,9 +1050,21 @@ function updateDashboard() {
 // TABLA: FILTROS Y RENDERIZADO
 // ==========================================
 function updateTableFilters() {
+    const filterBank = document.getElementById('filter-bank');
     const filterCategory = document.getElementById('filter-category');
     const filterMonth = document.getElementById('filter-month');
     const filterYear = document.getElementById('filter-year');
+
+    // Bancos presentes en los datos
+    const banks = [...new Set(appData.transactions.map(t => t.bank).filter(Boolean))].sort();
+    const currentBank = filterBank.value;
+    filterBank.innerHTML = '<option value="all">Todos los bancos</option>';
+    banks.forEach(bank => {
+        const opt = document.createElement('option');
+        opt.value = bank; opt.textContent = bank;
+        filterBank.appendChild(opt);
+    });
+    if (currentBank) filterBank.value = currentBank;
 
     // Categorías con iconos
     const categories = [...new Set(appData.transactions.map(t => t.category))].sort();
@@ -1071,6 +1112,7 @@ function updateTableFilters() {
 }
 
 function getFilteredTransactions() {
+    const filterBankVal = document.getElementById('filter-bank').value;
     const filterTypeVal = document.getElementById('filter-type').value;
     const filterCategoryVal = document.getElementById('filter-category').value;
     const filterMonthVal = document.getElementById('filter-month').value;
@@ -1081,6 +1123,9 @@ function getFilteredTransactions() {
 
     let result = [...appData.transactions];
 
+    if (filterBankVal !== 'all') {
+        result = result.filter(t => (t.bank || 'Otro') === filterBankVal);
+    }
     if (filterTypeVal !== 'all') {
         result = result.filter(t => t.type === filterTypeVal);
     }
@@ -1173,6 +1218,7 @@ function renderTable() {
                 </td>
                 <td class="td-amount ${amountClass}">${amountStr}</td>
                 <td><span class="badge-type ${badgeClass}">${badgeText}</span></td>
+                <td>${t.bank ? `<span class="bank-badge bank-${t.bank}"><span class="bank-badge-dot"></span>${t.bank}</span>` : '<span style="color:var(--text-muted);font-size:0.75rem;">—</span>'}</td>
                 <td>
                     <div style="display:flex; gap:0.5rem; justify-content:center;">
                         <button class="btn-row-action btn-row-split" data-index="${globalIdx}" title="Fraccionar movimiento">✂️</button>
@@ -1263,12 +1309,14 @@ function renderPagination(total) {
 }
 
 // Listeners de filtros
+const filterBank = document.getElementById('filter-bank');
 const filterType = document.getElementById('filter-type');
 const filterCategory = document.getElementById('filter-category');
 const filterMonth = document.getElementById('filter-month');
 const filterYear = document.getElementById('filter-year');
 const filterSearch = document.getElementById('filter-search');
 
+filterBank.addEventListener('change', () => { tableCurrentPage = 1; renderTable(); });
 filterType.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
 filterCategory.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });
 filterMonth.addEventListener('change', () => { tableCurrentPage = 1; updateDashboard(); });

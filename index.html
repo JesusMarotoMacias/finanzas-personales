@@ -129,6 +129,9 @@
                 <div class="table-header-row">
                     <h2>📋 Mis Movimientos</h2>
                     <div class="table-filters">
+                        <select id="filter-bank" class="filter-select">
+                            <option value="all">Todos los bancos</option>
+                        </select>
                         <select id="filter-type" class="filter-select">
                             <option value="all">Todos los tipos</option>
                             <option value="income">Solo Ingresos</option>
@@ -160,6 +163,7 @@
                                 <th>Concepto / Categoría</th>
                                 <th data-sort="amount" class="sortable">Importe <span class="sort-icon">↕</span></th>
                                 <th>Tipo</th>
+                                <th>Banco</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
@@ -173,6 +177,37 @@
             </section>
 
         </main>
+    </div>
+
+    <!-- ============================================
+         MODAL: Selección de Banco
+    ============================================= -->
+    <div id="bank-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-card" style="max-width:440px;">
+            <div class="modal-title-row">
+                <h2>🏦 ¿De qué banco es este extracto?</h2>
+                <button id="btn-close-bank-modal" class="btn-close">✕</button>
+            </div>
+            <p style="margin-bottom:1.25rem; color:var(--text-muted);">Selecciona el banco para identificar los movimientos importados.</p>
+            <div class="bank-options">
+                <button class="bank-option-btn" data-bank="Santander">
+                    <span class="bank-logo-icon bank-santander-icon">S</span>
+                    <span class="bank-option-name">Santander</span>
+                </button>
+                <button class="bank-option-btn" data-bank="Sabadell">
+                    <span class="bank-logo-icon bank-sabadell-icon">SAB</span>
+                    <span class="bank-option-name">Sabadell</span>
+                </button>
+                <button class="bank-option-btn" data-bank="ABANCA">
+                    <span class="bank-logo-icon bank-abanca-icon">A</span>
+                    <span class="bank-option-name">ABANCA</span>
+                </button>
+                <button class="bank-option-btn" data-bank="Otro">
+                    <span class="bank-logo-icon bank-otro-icon">?</span>
+                    <span class="bank-option-name">Otro</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ============================================
