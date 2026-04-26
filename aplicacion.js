@@ -899,7 +899,7 @@ function processExcelData(data) {
         // Detectar columna FECHA
         const dateKey = keys.find(k => {
             const kl = k.toLowerCase();
-            return kl.includes('fecha') || kl.includes('date') || kl === 'f. valor' || kl === 'f. operación';
+            return kl.includes('fecha') || kl.includes('date') || kl.includes('f. oper') || kl.includes('f.oper') || kl === 'f. valor' || kl === 'f. operación' || kl === 'f. operativa';
         });
         if (dateKey && row[dateKey] !== undefined && row[dateKey] !== '') {
             if (row[dateKey] instanceof Date) {
