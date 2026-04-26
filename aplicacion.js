@@ -339,10 +339,16 @@ function processPendingTransactions() {
         t.category = categoryMappings[t.rawCategory] || guessCategory(t.rawCategory) || t.rawCategory || 'Otros';
     });
 
-    appData.transactions = pendingTransactions;
+    const existingKeys = new Set(appData.transactions.map(t => `${t.date}|${t.amount}|${t.rawCategory}`));
+    const newTransactions = pendingTransactions.filter(t => !existingKeys.has(`${t.date}|${t.amount}|${t.rawCategory}`));
+    const duplicates = pendingTransactions.length - newTransactions.length;
 
-    if (appData.transactions.length > 0) {
-        uploadStatus.textContent = `✅ Archivo cargado. Se leyeron ${appData.transactions.length} movimientos.`;
+    appData.transactions = [...appData.transactions, ...newTransactions];
+
+    if (newTransactions.length > 0 || appData.transactions.length > 0) {
+        let msg = `✅ ${newTransactions.length} movimiento(s) añadido(s).`;
+        if (duplicates > 0) msg += ` (${duplicates} duplicado(s) omitido(s))`;
+        uploadStatus.textContent = msg;
         uploadStatus.className = 'status-msg success';
         saveData(false);
         updateDashboard();
