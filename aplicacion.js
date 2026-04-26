@@ -140,6 +140,7 @@ let categoryMappings = JSON.parse(localStorage.getItem('categoryMappings')) || {
 const defaultCategories = [
     "Salario",
     "Ingresos Fijos",
+    "Intereses / Remuneraciones",
     "Ingresos Extras",
     "Vivienda / Alquiler",
     "Alimentación / Supermercado",
@@ -159,6 +160,7 @@ const defaultCategories = [
 const categoryIcons = {
     "Salario": "💼",
     "Ingresos Fijos": "💰",
+    "Intereses / Remuneraciones": "💹",
     "Ingresos Extras": "🎁",
     "Vivienda / Alquiler": "🏠",
     "Alimentación / Supermercado": "🛒",
@@ -974,7 +976,7 @@ function updateDashboard() {
         if (filterYearVal !== 'all' && tYear !== filterYearVal) return;
 
         // Categorías que nunca deben aparecer en gastos por definición
-        const incomeFixedCats = ['Salario', 'Ingresos Fijos', 'Otros Ingresos', 'Nómina', 'Ventas'];
+        const incomeFixedCats = ['Salario', 'Ingresos Fijos', 'Intereses / Remuneraciones', 'Otros Ingresos', 'Nómina', 'Ventas'];
 
         if (t.type === 'income') {
             totalIncome += t.amount;
